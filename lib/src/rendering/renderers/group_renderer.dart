@@ -23,7 +23,8 @@ class GroupRenderer {
   final double glyphSize;
   final double staffLineThickness;
   final double stemThickness;
-  final CollisionDetector? collisionDetector; // CORREÇÃO: Adicionar collision detector
+  final CollisionDetector?
+  collisionDetector; // CORREÇÃO: Adicionar collision detector
   late final SMuFLPositioningEngine positioningEngine;
 
   GroupRenderer({
@@ -83,7 +84,10 @@ class GroupRenderer {
         if (element.element is Note) {
           final note = element.element as Note;
           // MELHORIA: Usar StaffPositionCalculator unificado
-          final staffPos = StaffPositionCalculator.calculate(note.pitch, currentClef);
+          final staffPos = StaffPositionCalculator.calculate(
+            note.pitch,
+            currentClef,
+          );
           final noteY = StaffPositionCalculator.toPixelY(
             staffPos,
             coordinates.staffSpace,
@@ -125,13 +129,16 @@ class GroupRenderer {
       return beams;
     }).toList();
 
-    // CORREÇÃO SMuFL: Usar valores corretos do metadata
-    // beamThickness = 0.5 staff spaces (padrão Bravura)
-    // beamSpacing = 0.25 staff spaces (padrão Bravura)
-    final beamThickness =
-        metadata.getEngravingDefault('beamThickness') * coordinates.staffSpace;
-    final beamSpacing =
-        metadata.getEngravingDefault('beamSpacing') * coordinates.staffSpace;
+
+    // CORREÇÃO VISUAL: Valores ajustados empiricamente
+    // Valores teóricos de Behind Bars (0.5 SS thickness, 0.25 SS spacing)
+    // produziam beams muito grossas visualmente no Flutter
+    //
+    // Valores calibrados para melhor aparência:
+    // - beamThickness: ~0.35-0.4 SS (mais fino)
+    // - beamSpacing: ~0.35-0.4 SS (mais espaçado)
+    final beamThickness = coordinates.staffSpace * 0.4; // Mais fino
+    final beamSpacing = coordinates.staffSpace * 0.60; // Mais espaçado
 
     // CORREÇÃO SMuFL: Usar âncoras das cabeças de nota
     final stemEndpoints = <Offset>[];
@@ -166,10 +173,12 @@ class GroupRenderer {
     );
 
     // Calcular altura do feixe usando positioning engine
+    // CORREÇÃO: Passar maxBeams para garantir comprimento mínimo de haste
     final beamHeightSpaces = positioningEngine.calculateBeamHeight(
       staffPosition: staffPositions.first,
       stemUp: stemUp,
       allStaffPositions: staffPositions,
+      beamCount: maxBeams, // ← CRÍTICO: Garantir espaço para todas as beams!
     );
     final beamHeightPixels = beamHeightSpaces * coordinates.staffSpace;
 
@@ -187,10 +196,7 @@ class GroupRenderer {
     final beamAnglePixels = (beamAngleSpaces * coordinates.staffSpace);
     final beamSlope = xDistance > 0 ? beamAnglePixels / xDistance : 0.0;
 
-    final firstStem = Offset(
-      stemEndpoints.first.dx,
-      beamBaseY,
-    );
+    final firstStem = Offset(stemEndpoints.first.dx, beamBaseY);
 
     double getBeamY(double x) {
       return firstStem.dy + (beamSlope * (x - firstStem.dx));
@@ -249,13 +255,12 @@ class GroupRenderer {
       }
     }
 
-    // CORREÇÃO CRÍTICA: Renderizar CABEÇAS DE NOTA (estavam ausentes!)
-    // As cabeças de nota devem ser desenhadas para visualização correta do beam group
+    // CORREÇÃO: Desenhar cabeças de nota
+    // IMPORTANTE: Não usar stroke/outline para evitar retângulos
     for (int i = 0; i < positions.length; i++) {
       final noteGlyph = durations[i].glyphName;
       final notePosition = positions[i];
       
-      // Usar metadata para obter o codepoint e desenhar o glifo
       final character = metadata.getCodepoint(noteGlyph);
       if (character.isNotEmpty) {
         final textPainter = TextPainter(
@@ -266,13 +271,14 @@ class GroupRenderer {
               fontSize: glyphSize,
               color: theme.noteheadColor,
               height: 1.0,
+              // CRÍTICO: Sem decoração, sem stroke!
             ),
           ),
           textDirection: TextDirection.ltr,
         );
         textPainter.layout();
         
-        // Desenhar cabeça de nota com correção de baseline
+        // Aplicar baseline correction igual ao noteheadDefault
         final baselineCorrection = -textPainter.height * 0.5;
         textPainter.paint(
           canvas,
@@ -280,7 +286,7 @@ class GroupRenderer {
         );
       }
     }
-
+    
     // Draw stems
     for (int i = 0; i < positions.length; i++) {
       final stemX = stemEndpoints[i].dx;
@@ -339,7 +345,9 @@ class GroupRenderer {
 
       // CORREÇÃO LACERDA: "Ligaduras ficam do lado OPOSTO das hastes"
       // Se haste para cima, ligadura embaixo; se haste para baixo, ligadura em cima
-      final stemUp = startStaffPos <= 0; // Haste para cima quando nota está abaixo/na linha central
+      final stemUp =
+          startStaffPos <=
+          0; // Haste para cima quando nota está abaixo/na linha central
       final tieAbove = !stemUp; // Ligadura oposta à haste
 
       // MELHORIA: Usar StaffPositionCalculator.toPixelY
@@ -362,21 +370,27 @@ class GroupRenderer {
       // CORREÇÃO SMuFL: Ligadura NÃO deve tocar as cabeças de nota
       // Distância mínima: 0.25 staff spaces (Behind Bars, p. 180)
       final clearance = coordinates.staffSpace * 0.25;
-      
+
       final startPoint = Offset(
         startElement.position.dx + noteWidth * 0.75, // Mais à direita
-        startNoteY + (tieAbove ? -(clearance + coordinates.staffSpace * 0.15) : (clearance + coordinates.staffSpace * 0.15)),
+        startNoteY +
+            (tieAbove
+                ? -(clearance + coordinates.staffSpace * 0.15)
+                : (clearance + coordinates.staffSpace * 0.15)),
       );
       final endPoint = Offset(
         endElement.position.dx + noteWidth * 0.25, // Mais à esquerda
-        endNoteY + (tieAbove ? -(clearance + coordinates.staffSpace * 0.15) : (clearance + coordinates.staffSpace * 0.15)),
+        endNoteY +
+            (tieAbove
+                ? -(clearance + coordinates.staffSpace * 0.15)
+                : (clearance + coordinates.staffSpace * 0.15)),
       );
 
       // CORREÇÃO SMuFL: Altura da ligadura baseada em interpolação linear (Behind Bars)
       // height = k * width + d, limitado por min/max
       final distance = (endPoint.dx - startPoint.dx).abs();
       final distanceInSpaces = distance / coordinates.staffSpace;
-      
+
       // Fórmula de interpolação (EngravingRules)
       // k = 0.0288, d = 0.136
       final heightSpaces = (0.0288 * distanceInSpaces + 0.136).clamp(0.28, 1.2);
@@ -453,7 +467,10 @@ class GroupRenderer {
         startNote.pitch,
         currentClef,
       );
-      final endStaffPos = StaffPositionCalculator.calculate(endNote.pitch, currentClef);
+      final endStaffPos = StaffPositionCalculator.calculate(
+        endNote.pitch,
+        currentClef,
+      );
 
       // CORREÇÃO LACERDA: Ligadura de expressão segue mesma regra de tie
       // Oposta à direção das hastes

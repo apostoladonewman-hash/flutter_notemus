@@ -22,10 +22,17 @@ class BarlineRenderer {
   });
 
   void render(Canvas canvas, Barline barline, Offset position) {
+    // CORREÇÃO: Garantir espessura mínima visível para barlines
+    final thickness = metadata.getEngravingDefault('thinBarlineThickness');
+    final minThickness = coordinates.staffSpace * 0.16; // Behind Bars recomenda 0.16 SS
+    final finalThickness = thickness > minThickness ? thickness : minThickness;
+    
     final paint = Paint()
       ..color = theme.barlineColor
-      ..strokeWidth = metadata.getEngravingDefault('thinBarlineThickness');
-
+      ..strokeWidth = finalThickness
+      ..strokeCap = StrokeCap.butt; // CRÍTICO: Pontas retas para linhas verticais
+    
+    // Desenhar do topo até o fundo do pentagrama
     canvas.drawLine(
       Offset(position.dx, coordinates.getStaffLineY(1)),
       Offset(position.dx, coordinates.getStaffLineY(5)),

@@ -59,10 +59,11 @@ class SMuFLPositioningEngine {
     accidentalToNoteheadDistance = 0.16; // Valor tipográfico profissional
     accidentalMinimumClearance = 0.08;
 
-    // Ângulos de feixes - baseado em OSMD e Behind Bars
-    minimumBeamSlant = 0.25;
-    maximumBeamSlant = 1.0; // Corrigido de 1.75 para valor profissional
-    twoNoteBeamMaxSlant = 0.5;
+    // Ângulos de feixes - baseado em Behind Bars (valores conservadores)
+    // Behind Bars recomenda beams relativamente planos
+    minimumBeamSlant = 0.15;  // Ângulo mínimo mais sutil
+    maximumBeamSlant = 0.5;   // Máximo reduzido (era 1.0, muito inclinado!)
+    twoNoteBeamMaxSlant = 0.35; // Para 2 notas, ainda mais conservador
 
     // Ornamentos e articulações - valores tipográficos padrão
     articulationToNoteDistance = 0.5;
@@ -323,6 +324,7 @@ class SMuFLPositioningEngine {
     required int staffPosition,
     required bool stemUp,
     required List<int> allStaffPositions,
+    int beamCount = 1, // Número de beams (1, 2, 3, ou 4)
   }) {
     if (stemUp) {
       // CORREÇÃO: Encontrar a nota mais AGUDA (maior staffPosition)
@@ -337,6 +339,14 @@ class SMuFLPositioningEngine {
         height += (highestPosition - 4) * 0.5;
       }
 
+      // CORREÇÃO CRÍTICA: Comprimento mínimo para múltiplas beams
+      // Behind Bars: Haste deve ter pelo menos espaço para todas as beams + margem
+      // Ajustado empiricamente para comprimento visual adequado
+      if (beamCount > 1) {
+        final minHeightForBeams = standardStemLength + ((beamCount - 1) * 0.5);
+        height = height > minHeightForBeams ? height : minHeightForBeams;
+      }
+
       return height;
     } else {
       // CORREÇÃO: Encontrar a nota mais GRAVE (menor staffPosition)
@@ -349,6 +359,14 @@ class SMuFLPositioningEngine {
       // CORREÇÃO: Se a nota mais baixa está muito abaixo da pauta (< -4), extender
       if (lowestPosition < -4) {
         height += (-4 - lowestPosition) * 0.5;
+      }
+
+      // CORREÇÃO CRÍTICA: Comprimento mínimo para múltiplas beams
+      // Behind Bars: Haste deve ter pelo menos espaço para todas as beams + margem
+      // Ajustado empiricamente para comprimento visual adequado
+      if (beamCount > 1) {
+        final minHeightForBeams = standardStemLength + ((beamCount - 1) * 0.5);
+        height = height > minHeightForBeams ? height : minHeightForBeams;
       }
 
       return height;

@@ -207,7 +207,7 @@ class CompleteMusicPieceExample extends StatelessWidget {
     ));
 
     // === COMPASSO 2: Tercinas e crescendo ===
-    final measure2 = Measure();
+    final measure2 = Measure(inheritedTimeSignature: TimeSignature(numerator: 4, denominator: 4));
 
     // Tercina de colcheias com ligadura
     measure2.add(Tuplet(
@@ -253,7 +253,7 @@ class CompleteMusicPieceExample extends StatelessWidget {
     ));
 
     // === COMPASSO 3: Acorde e clímax ===
-    final measure3 = Measure();
+    final measure3 = Measure(inheritedTimeSignature: TimeSignature(numerator: 4, denominator: 4));
 
     // Acorde forte no clímax
     measure3.add(Chord(
@@ -293,7 +293,7 @@ class CompleteMusicPieceExample extends StatelessWidget {
     ));
 
     // === COMPASSO 4: Finalização com fermata ===
-    final measure4 = Measure();
+    final measure4 = Measure(inheritedTimeSignature: TimeSignature(numerator: 4, denominator: 4));
 
     // Ligadura de prolongamento
     measure4.add(Note(
@@ -309,9 +309,10 @@ class CompleteMusicPieceExample extends StatelessWidget {
       slur: SlurType.end,
     ));
 
+    // Finalização com fermata (mínima pontuada 0.75 + colcheia 0.125 + colcheia 0.125 = 1.0)
     measure4.add(Note(
       pitch: const Pitch(step: 'D', octave: 5),
-      duration: const Duration(DurationType.whole),
+      duration: const Duration(DurationType.eighth), // Colcheia para completar exatos 1.0
       tie: TieType.end,
       ornaments: [Ornament(type: OrnamentType.fermata)],
       dynamicElement: Dynamic(type: DynamicType.pianissimo),

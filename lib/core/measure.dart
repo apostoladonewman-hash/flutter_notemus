@@ -22,13 +22,58 @@ class Measure {
   /// Exemplo: [[0, 1, 2], [3, 4]] = agrupa notas 0,1,2 em um beam e 3,4 em outro
   List<List<int>> manualBeamGroups;
 
+  /// TimeSignature herdado de compasso anterior (usado para validação preventiva)
+  TimeSignature? inheritedTimeSignature;
+
   Measure({
     this.autoBeaming = true,
     this.beamingMode = BeamingMode.automatic,
     this.manualBeamGroups = const [],
+    this.inheritedTimeSignature,
   });
 
-  void add(MusicalElement element) => elements.add(element);
+  /// Adiciona um elemento musical ao compasso.
+  /// 
+  /// **VALIDAÇÃO RIGOROSA**: Se o compasso tiver TimeSignature, valida ANTES
+  /// de adicionar para garantir que não excede a capacidade do compasso.
+  /// 
+  /// Lança [MeasureCapacityException] se tentar adicionar figura que exceda.
+  void add(MusicalElement element) {
+    // Verificar se é um elemento que ocupa tempo musical
+    final elementDuration = _getElementDuration(element);
+    
+    if (elementDuration > 0) {
+      // Buscar TimeSignature no compasso ou usar o herdado
+      final ts = timeSignature ?? inheritedTimeSignature;
+      
+      if (ts != null) {
+        // Calcular se há espaço
+        final currentValue = currentMusicalValue;
+        final measureCapacity = ts.measureValue;
+        final afterAdding = currentValue + elementDuration;
+        
+        // Tolerância para erros de ponto flutuante
+        const tolerance = 0.0001;
+        
+        if (afterAdding > measureCapacity + tolerance) {
+          // PROIBIDO: Excede capacidade!
+          final excess = afterAdding - measureCapacity;
+          throw MeasureCapacityException(
+            'Não é possível adicionar ${element.runtimeType} ao compasso!\n'
+            'Compasso ${ts.numerator}/${ts.denominator} (capacidade: $measureCapacity unidades)\n'
+            'Valor atual: $currentValue unidades\n'
+            'Tentando adicionar: $elementDuration unidades\n'
+            'Total seria: $afterAdding unidades\n'
+            'EXCESSO: ${excess.toStringAsFixed(4)} unidades\n'
+            '❌ OPERAÇÃO BLOQUEADA - Remova figuras ou crie novo compasso!'
+          );
+        }
+      }
+    }
+    
+    // Adicionar elemento
+    elements.add(element);
+  }
 
   /// Calcula o valor total atual das figuras musicais no compasso.
   double get currentMusicalValue {
@@ -102,4 +147,38 @@ class Measure {
     if (ts == null) return double.infinity;
     return ts.measureValue - currentMusicalValue;
   }
+
+  /// Calcula a duração de um elemento musical (helper privado)
+  double _getElementDuration(MusicalElement element) {
+    if (element is Note) {
+      return element.duration.realValue;
+    } else if (element is Rest) {
+      return element.duration.realValue;
+    } else if (element.runtimeType.toString() == 'Chord') {
+      final dynamic chord = element;
+      return chord.duration?.realValue ?? 0.0;
+    } else if (element.runtimeType.toString() == 'Tuplet') {
+      final dynamic tuplet = element;
+      double tupletValue = 0.0;
+      for (final tupletElement in tuplet.elements) {
+        tupletValue += _getElementDuration(tupletElement);
+      }
+      // Aplicar proporção da quiáltera
+      if (tuplet.actualNotes > 0) {
+        tupletValue = tupletValue * (tuplet.normalNotes / tuplet.actualNotes);
+      }
+      return tupletValue;
+    }
+    return 0.0; // Elementos sem duração (clef, key signature, etc.)
+  }
+}
+
+/// Exceção lançada quando se tenta adicionar figura que excede capacidade do compasso
+class MeasureCapacityException implements Exception {
+  final String message;
+  
+  MeasureCapacityException(this.message);
+  
+  @override
+  String toString() => 'MeasureCapacityException: $message';
 }

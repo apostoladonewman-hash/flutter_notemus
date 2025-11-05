@@ -8,6 +8,7 @@ import '../../core/core.dart'; // 🆕 Usar tipos do core
 import '../smufl/smufl_metadata_loader.dart';
 import 'beam_grouper.dart';
 import 'bounding_box.dart';
+import 'measure_validator.dart'; // NOVO: Sistema de validação rigorosa
 
 class PositionedElement {
   final MusicalElement element;
@@ -115,8 +116,8 @@ class LayoutEngine {
   // CORREÇÃO TIPOGRÁFICA: Espaçamentos melhorados baseados em padrões musicais
   static const double systemMargin = 2.0;
   static const double measureMinWidth = 4.0;
-  static const double noteMinSpacing = 2.0; // CORRIGIDO: 1.5 era muito apertado
-  static const double measureEndPadding = 1.0;
+  static const double noteMinSpacing = 3.0; // AUMENTADO: Para evitar sobreposições
+  static const double measureEndPadding = 1.5; // AUMENTADO: Mais espaço antes da barline
 
   LayoutEngine(
     this.staff, {
@@ -160,10 +161,81 @@ class LayoutEngine {
 
     final List<PositionedElement> positionedElements = [];
 
+    // CABEÇALHO DE VALIDAÇÃO
+    print('\n╔════════════════════════════════════════════════════════╗');
+    print('║   VALIDAÇÃO RIGOROSA DE COMPASSOS                      ║');
+    print('║   Total: ${staff.measures.length} compasso(s)                                  ║');
+    print('╚════════════════════════════════════════════════════════╝\n');
+
+    // Sistema de herança de TimeSignature
+    TimeSignature? currentTimeSignature;
+
     for (int i = 0; i < staff.measures.length; i++) {
       final measure = staff.measures[i];
       final isFirst = cursor.isFirstMeasureInSystem;
       final isLast = i == staff.measures.length - 1;
+
+      // HERANÇA DE TIME SIGNATURE: Procurar no compasso atual
+      TimeSignature? measureTimeSignature;
+      for (final element in measure.elements) {
+        if (element is TimeSignature) {
+          measureTimeSignature = element;
+          currentTimeSignature = element; // Atualizar TimeSignature corrente
+          break;
+        }
+      }
+
+      // Se não encontrou, usar o TimeSignature herdado
+      final timeSignatureToUse = measureTimeSignature ?? currentTimeSignature;
+
+      // DEBUG: Ver elementos do compasso ANTES de validar
+      print('  📋 Compasso ${i + 1}: ${measure.elements.length} elementos');
+      for (var j = 0; j < measure.elements.length; j++) {
+        print('     [$j] ${measure.elements[j].runtimeType}');
+      }
+
+      // VALIDAÇÃO CRÍTICA: Sistema rigoroso baseado em teoria musical
+      // IMPORTANTE: Passar o timeSignature herdado!
+      final validation = timeSignatureToUse != null
+          ? MeasureValidator.validateWithTimeSignature(
+              measure,
+              timeSignatureToUse,
+              allowAnacrusis: isFirst && i == 0,
+            )
+          : MeasureValidator.validate(
+              measure,
+              allowAnacrusis: isFirst && i == 0,
+            );
+      
+      // SEMPRE mostrar status de validação (usar timeSignature herdado para display)
+      if (timeSignatureToUse != null) {
+        final displayNum = timeSignatureToUse.numerator;
+        final displayDen = timeSignatureToUse.denominator;
+        final expectedCap = displayNum / displayDen;
+        
+        if (validation.actualDuration == 0) {
+          // Compasso vazio - mostrar como aviso
+          print('⚠️ Compasso ${i + 1}: VAZIO ($displayNum/$displayDen - esperado: ${expectedCap.toStringAsFixed(3)} unidades)');
+        } else {
+          final diff = (validation.actualDuration - expectedCap).abs();
+          if (diff < MeasureValidator.tolerance) {
+            print('✓ Compasso ${i + 1}: VÁLIDO ($displayNum/$displayDen = ${validation.actualDuration.toStringAsFixed(3)} unidades)');
+          } else {
+            print('\n⚠️ COMPASSO ${i + 1} INVÁLIDO:');
+            print('   Fórmula: $displayNum/$displayDen');
+            print('   Esperado: ${expectedCap.toStringAsFixed(3)} unidades');
+            print('   Atual: ${validation.actualDuration.toStringAsFixed(3)} unidades');
+            print('   Diferença: ${diff.toStringAsFixed(4)} unidades');
+            if (diff > 0) {
+              print('   ❌ EXCESSO - Remova figuras!');
+            } else {
+              print('   ❌ FALTA - Adicione pausas ou notas!');
+            }
+          }
+        }
+      } else {
+        print('✗ Compasso ${i + 1}: SEM FÓRMULA DE COMPASSO');
+      }
 
       final measureWidth = _calculateMeasureWidthCursor(measure, isFirst);
 
@@ -179,6 +251,11 @@ class LayoutEngine {
 
       cursor.endMeasure();
     }
+
+    // RODAPÉ DE VALIDAÇÃO
+    print('\n╔════════════════════════════════════════════════════════╗');
+    print('║   VALIDAÇÃO CONCLUÍDA                                  ║');
+    print('╚════════════════════════════════════════════════════════╝\n');
 
     return positionedElements;
   }

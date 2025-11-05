@@ -125,7 +125,13 @@ class ChordRenderer extends BaseGlyphRenderer {
       final avgPosition = sortedPositions.reduce((a, b) => a + b) / sortedPositions.length;
       final stemUp = avgPosition <= 0;
       
-      final extremeNote = stemUp ? sortedNotes.first : sortedNotes.last;
+      // CORREÇÃO CRÍTICA: sortedNotes está em ordem DECRESCENTE de staffPosition
+      // - sortedNotes.first = nota mais ALTA (maior staffPosition)
+      // - sortedNotes.last = nota mais BAIXA (menor staffPosition)
+      // 
+      // Haste para CIMA: deve começar na nota mais BAIXA
+      // Haste para BAIXO: deve começar na nota mais ALTA
+      final extremeNote = stemUp ? sortedNotes.last : sortedNotes.first;
 
       // MELHORIA: Usar StaffPositionCalculator
       final extremePos = StaffPositionCalculator.calculate(
