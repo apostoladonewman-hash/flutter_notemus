@@ -1,5 +1,5 @@
 // example/lib/examples/complete_music_piece.dart
-// Peça musical completa demonstrando todos os recursos do flutter_notemus
+// Ode à Alegria - Ludwig van Beethoven (Sinfonia nº 9)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_notemus/flutter_notemus.dart';
@@ -32,7 +32,7 @@ class CompleteMusicPieceExample extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Exemplo de Composição Completa',
+          'Ode à Alegria',
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
@@ -41,7 +41,7 @@ class CompleteMusicPieceExample extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Demonstração de todos os elementos SMuFL em contexto musical real',
+          'Ludwig van Beethoven - Sinfonia nº 9 em Ré menor, Op. 125',
           style: TextStyle(
             fontSize: 16,
             color: Colors.grey[700],
@@ -69,14 +69,14 @@ class CompleteMusicPieceExample extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Pequena Peça Demonstrativa',
+                      'Ode à Alegria',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      'Compositor: SMuFL Renderer Team',
+                      'Ludwig van Beethoven (1770-1827)',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -87,10 +87,10 @@ class CompleteMusicPieceExample extends StatelessWidget {
               ],
             ),
             const Divider(height: 24),
-            _buildInfoRow('Tonalidade:', 'Ré Maior (2 sustenidos)'),
-            _buildInfoRow('Compasso:', '4/4 (Comum)'),
-            _buildInfoRow('Andamento:', 'Moderato ♩= 100'),
-            _buildInfoRow('Elementos:', 'Claves, Armaduras, Ornamentos, Articulações, Dinâmicas, Ligaduras'),
+            _buildInfoRow('Tonalidade:', 'Ré Maior'),
+            _buildInfoRow('Compasso:', '4/4'),
+            _buildInfoRow('Andamento:', 'Allegro assai ♩= 120'),
+            _buildInfoRow('Ano:', '1824'),
           ],
         ),
       ),
@@ -163,159 +163,106 @@ class CompleteMusicPieceExample extends StatelessWidget {
   Widget _createMusicScore() {
     final staff = Staff();
 
-    // === COMPASSO 1: Introdução com ornamentos ===
+    // === COMPASSO 1: F# F# G A ===
     final measure1 = Measure();
     measure1.add(Clef(clefType: ClefType.treble));
-    measure1.add(KeySignature(2)); // Ré Maior
+    measure1.add(KeySignature(2)); // Ré Maior (F#, C#)
     measure1.add(TimeSignature(numerator: 4, denominator: 4));
     measure1.add(TempoMark(
-      text: 'Moderato',
+      text: 'Allegro assai',
       beatUnit: DurationType.quarter,
-      bpm: 100,
+      bpm: 120,
     ));
 
-    // Frase de abertura com ligadura de expressão
+    // F# F# G A (Fá# Fá# Sol Lá) - F# já está na armadura!
     measure1.add(Note(
-      pitch: const Pitch(step: 'D', octave: 5),
+      pitch: const Pitch(step: 'F', octave: 5), // F# implícito (armadura)
       duration: const Duration(DurationType.quarter),
-      dynamicElement: Dynamic(type: DynamicType.mezzoPiano),
-      slur: SlurType.start,
-      ornaments: [Ornament(type: OrnamentType.trill)],
+      dynamicElement: Dynamic(type: DynamicType.mezzoForte),
     ));
 
     measure1.add(Note(
-      pitch: Pitch.withAccidental(step: 'F', octave: 5, accidentalType: AccidentalType.sharp),
-      duration: const Duration(DurationType.eighth),
-    ));
-
-    measure1.add(Note(
-      pitch: const Pitch(step: 'E', octave: 5),
-      duration: const Duration(DurationType.eighth),
-    ));
-
-    measure1.add(Note(
-      pitch: const Pitch(step: 'D', octave: 5),
+      pitch: const Pitch(step: 'F', octave: 5), // F# implícito
       duration: const Duration(DurationType.quarter),
-      slur: SlurType.end,
-      articulations: [ArticulationType.tenuto],
     ));
 
     measure1.add(Note(
-      pitch: const Pitch(step: 'A', octave: 4),
-      duration: const Duration(DurationType.quarter),
-      articulations: [ArticulationType.staccato],
-    ));
-
-    // === COMPASSO 2: Tercinas e crescendo ===
-    final measure2 = Measure(inheritedTimeSignature: TimeSignature(numerator: 4, denominator: 4));
-
-    // Tercina de colcheias com ligadura
-    measure2.add(Tuplet(
-      actualNotes: 3,
-      normalNotes: 2,
-      elements: [
-        Note(
-          pitch: const Pitch(step: 'B', octave: 4),
-          duration: const Duration(DurationType.eighth),
-          slur: SlurType.start,
-        ),
-        Note(
-          pitch: Pitch.withAccidental(step: 'C', octave: 5, accidentalType: AccidentalType.sharp),
-          duration: const Duration(DurationType.eighth),
-        ),
-        Note(
-          pitch: const Pitch(step: 'D', octave: 5),
-          duration: const Duration(DurationType.eighth),
-          slur: SlurType.end,
-        ),
-      ],
-      showBracket: true,
-      showNumber: true,
-    ));
-
-    measure2.add(Note(
-      pitch: const Pitch(step: 'E', octave: 5),
-      duration: const Duration(DurationType.quarter),
-      articulations: [ArticulationType.accent],
-    ));
-
-    measure2.add(Note(
-      pitch: Pitch.withAccidental(step: 'F', octave: 5, accidentalType: AccidentalType.sharp),
-      duration: const Duration(DurationType.half),
-      ornaments: [Ornament(type: OrnamentType.turn)],
-    ));
-
-    // Crescendo
-    measure2.add(Dynamic(
-      type: DynamicType.crescendo,
-      isHairpin: true,
-      length: 100,
-    ));
-
-    // === COMPASSO 3: Acorde e clímax ===
-    final measure3 = Measure(inheritedTimeSignature: TimeSignature(numerator: 4, denominator: 4));
-
-    // Acorde forte no clímax
-    measure3.add(Chord(
-      notes: [
-        Note(
-          pitch: const Pitch(step: 'A', octave: 4),
-          duration: const Duration(DurationType.half),
-        ),
-        Note(
-          pitch: const Pitch(step: 'D', octave: 5),
-          duration: const Duration(DurationType.half),
-        ),
-        Note(
-          pitch: Pitch.withAccidental(step: 'F', octave: 5, accidentalType: AccidentalType.sharp),
-          duration: const Duration(DurationType.half),
-        ),
-      ],
-      duration: const Duration(DurationType.half),
-      dynamic: Dynamic(type: DynamicType.forte),
-      articulations: [ArticulationType.marcato],
-    ));
-
-    measure3.add(Breath(type: BreathType.comma));
-
-    // Resposta suave
-    measure3.add(Note(
       pitch: const Pitch(step: 'G', octave: 5),
       duration: const Duration(DurationType.quarter),
-      dynamicElement: Dynamic(type: DynamicType.piano),
-      articulations: [ArticulationType.tenuto],
+    ));
+
+    measure1.add(Note(
+      pitch: const Pitch(step: 'A', octave: 5),
+      duration: const Duration(DurationType.quarter),
+    ));
+
+    // === COMPASSO 2: A G F# E ===
+    final measure2 = Measure();
+
+    // A G F# E (Lá Sol Fá# Mi)
+    measure2.add(Note(
+      pitch: const Pitch(step: 'A', octave: 5),
+      duration: const Duration(DurationType.quarter),
+    ));
+
+    measure2.add(Note(
+      pitch: const Pitch(step: 'G', octave: 5),
+      duration: const Duration(DurationType.quarter),
+    ));
+
+    measure2.add(Note(
+      pitch: const Pitch(step: 'F', octave: 5), // F# implícito
+      duration: const Duration(DurationType.quarter),
+    ));
+
+    measure2.add(Note(
+      pitch: const Pitch(step: 'E', octave: 5),
+      duration: const Duration(DurationType.quarter),
+    ));
+
+    // === COMPASSO 3: D D E F# ===
+    final measure3 = Measure();
+
+    // D D E F# (Ré Ré Mi Fá#)
+    measure3.add(Note(
+      pitch: const Pitch(step: 'D', octave: 5),
+      duration: const Duration(DurationType.quarter),
+    ));
+
+    measure3.add(Note(
+      pitch: const Pitch(step: 'D', octave: 5),
+      duration: const Duration(DurationType.quarter),
     ));
 
     measure3.add(Note(
       pitch: const Pitch(step: 'E', octave: 5),
       duration: const Duration(DurationType.quarter),
-      articulations: [ArticulationType.staccato],
     ));
 
-    // === COMPASSO 4: Finalização com fermata ===
-    final measure4 = Measure(inheritedTimeSignature: TimeSignature(numerator: 4, denominator: 4));
-
-    // Ligadura de prolongamento
-    measure4.add(Note(
-      pitch: const Pitch(step: 'D', octave: 5),
-      duration: const Duration(DurationType.half, dots: 1),
-      tie: TieType.start,
-      slur: SlurType.start,
+    measure3.add(Note(
+      pitch: const Pitch(step: 'F', octave: 5), // F# implícito
+      duration: const Duration(DurationType.quarter),
     ));
 
+    // === COMPASSO 4: F#. E E ===
+    final measure4 = Measure();
+
+    // F#. (Fá# pontuado - semínima pontuada)
     measure4.add(Note(
-      pitch: Pitch.withAccidental(step: 'C', octave: 5, accidentalType: AccidentalType.sharp),
+      pitch: const Pitch(step: 'F', octave: 5), // F# implícito
+      duration: const Duration(DurationType.quarter, dots: 1),
+    ));
+
+    // E (Mi - colcheia)
+    measure4.add(Note(
+      pitch: const Pitch(step: 'E', octave: 5),
       duration: const Duration(DurationType.eighth),
-      slur: SlurType.end,
     ));
 
-    // Finalização com fermata (mínima pontuada 0.75 + colcheia 0.125 + colcheia 0.125 = 1.0)
+    // E (Mi - mínima)
     measure4.add(Note(
-      pitch: const Pitch(step: 'D', octave: 5),
-      duration: const Duration(DurationType.eighth), // Colcheia para completar exatos 1.0
-      tie: TieType.end,
-      ornaments: [Ornament(type: OrnamentType.fermata)],
-      dynamicElement: Dynamic(type: DynamicType.pianissimo),
+      pitch: const Pitch(step: 'E', octave: 5),
+      duration: const Duration(DurationType.half),
     ));
 
     staff.add(measure1);
@@ -356,14 +303,12 @@ class CompleteMusicPieceExample extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          _buildLegendRow('🎼', 'Clave de Sol com armadura de Ré Maior'),
-          _buildLegendRow('🎵', 'Ornamentos: Trino, Grupeto, Fermata'),
-          _buildLegendRow('🎯', 'Articulações: Staccato, Tenuto, Marcato, Accent'),
-          _buildLegendRow('📊', 'Dinâmicas: mp, p, f, pp com crescendo'),
-          _buildLegendRow('🔗', 'Ligaduras de expressão e prolongamento'),
-          _buildLegendRow('3️⃣', 'Quiáltera: Tercina de colcheias'),
-          _buildLegendRow('🎸', 'Acorde: Tríade de Ré Maior'),
-          _buildLegendRow('💨', 'Marca de respiração'),
+          _buildLegendRow('🎼', 'Clave de Sol em Ré Maior (2 sustenidos)'),
+          _buildLegendRow('🎵', 'Tema famoso da 9ª Sinfonia'),
+          _buildLegendRow('📝', 'Compasso 4/4 (Comum)'),
+          _buildLegendRow('⏱️', 'Allegro assai ♩= 120'),
+          _buildLegendRow('🎹', 'Melodia simples e memorável'),
+          _buildLegendRow('✨', 'Espaçamento profissional SMuFL'),
         ],
       ),
     );

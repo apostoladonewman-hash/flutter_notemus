@@ -4,11 +4,12 @@
 // FASE 2 REFATORAÇÃO: Usando tipos do core/
 
 import 'package:flutter/material.dart';
-import '../../core/core.dart'; // 🆕 Usar tipos do core
+import '../../core/core.dart';
 import '../smufl/smufl_metadata_loader.dart';
 import 'beam_grouper.dart';
 import 'bounding_box.dart';
-import 'measure_validator.dart'; // NOVO: Sistema de validação rigorosa
+import 'measure_validator.dart';
+import 'spacing/spacing.dart'; // Sistema de Espaçamento Inteligente
 
 class PositionedElement {
   final MusicalElement element;
@@ -35,7 +36,9 @@ class LayoutCursor {
     required this.systemMargin,
     this.systemHeight = 10.0,
   }) : _currentX = systemMargin,
-       _currentY = staffSpace * 5.0, // CORREÇÃO CRÍTICA: Baseline é staffSpace * 5, não * 4
+       _currentY =
+           staffSpace *
+           5.0, // CORREÇÃO CRÍTICA: Baseline é staffSpace * 5, não * 4
        _currentSystem = 0,
        _isFirstMeasureInSystem = true;
 
@@ -74,7 +77,7 @@ class LayoutCursor {
 
   void endMeasure() {
     _isFirstMeasureInSystem = false;
-    advance(LayoutEngine.measureEndPadding * staffSpace);
+    // Padding agora aplicado ANTES da barline no layout principal
   }
 
   void addElement(MusicalElement element, List<PositionedElement> elements) {
@@ -102,6 +105,12 @@ class LayoutEngine {
   final double staffSpace;
   final SmuflMetadata? metadata;
 
+  // Sistema de Espaçamento Inteligente
+  late final IntelligentSpacingEngine _spacingEngine;
+
+  // Configuração de validação (silenciosa por padrão)
+  final bool verboseValidation;
+
   // CORREÇÃO SMuFL: Larguras agora consultadas dinamicamente do metadata
   // Valores de fallback mantidos para compatibilidade
   static const double _gClefWidthFallback = 2.684;
@@ -110,21 +119,30 @@ class LayoutEngine {
   static const double _noteheadBlackWidthFallback = 1.18;
   static const double _accidentalSharpWidthFallback = 1.116;
   static const double _accidentalFlatWidthFallback = 1.18;
-  static const double barlineSeparation = 0.4;
+  static const double barlineSeparation = 2.5; // Espaço DEPOIS da barline
   static const double legerLineExtension = 0.4;
 
-  // CORREÇÃO TIPOGRÁFICA: Espaçamentos melhorados baseados em padrões musicais
-  static const double systemMargin = 2.0;
-  static const double measureMinWidth = 4.0;
-  static const double noteMinSpacing = 3.0; // AUMENTADO: Para evitar sobreposições
-  static const double measureEndPadding = 1.5; // AUMENTADO: Mais espaço antes da barline
+  // ESPAÇAMENTO INTELIGENTE: Valores balanceados
+  static const double systemMargin = 2.5;
+  static const double measureMinWidth = 5.0;
+  static const double noteMinSpacing = 3.5; // Base para espaçamento entre notas
+  static const double measureEndPadding =
+      3.0; // Espaço adequado ANTES da barline (agora corrigido!)
 
   LayoutEngine(
     this.staff, {
     required this.availableWidth,
     this.staffSpace = 12.0,
     this.metadata,
-  });
+    this.verboseValidation = false, // Silencioso por padrão
+    SpacingPreferences? spacingPreferences,
+  }) {
+    // Inicializar motor de espaçamento
+    _spacingEngine = IntelligentSpacingEngine(
+      preferences: spacingPreferences ?? SpacingPreferences.normal,
+    );
+    _spacingEngine.initializeOpticalCompensator(staffSpace);
+  }
 
   /// Obtém largura de glifo dinamicamente do metadata ou retorna fallback
   double _getGlyphWidth(String glyphName, double fallback) {
@@ -144,13 +162,16 @@ class LayoutEngine {
   double get cClefWidth => _getGlyphWidth('cClef', _cClefWidthFallback);
 
   /// Largura da cabeça de nota preta
-  double get noteheadBlackWidth => _getGlyphWidth('noteheadBlack', _noteheadBlackWidthFallback);
+  double get noteheadBlackWidth =>
+      _getGlyphWidth('noteheadBlack', _noteheadBlackWidthFallback);
 
   /// Largura do sustenido
-  double get accidentalSharpWidth => _getGlyphWidth('accidentalSharp', _accidentalSharpWidthFallback);
+  double get accidentalSharpWidth =>
+      _getGlyphWidth('accidentalSharp', _accidentalSharpWidthFallback);
 
   /// Largura do bemol
-  double get accidentalFlatWidth => _getGlyphWidth('accidentalFlat', _accidentalFlatWidthFallback);
+  double get accidentalFlatWidth =>
+      _getGlyphWidth('accidentalFlat', _accidentalFlatWidthFallback);
 
   List<PositionedElement> layout() {
     final cursor = LayoutCursor(
@@ -161,14 +182,12 @@ class LayoutEngine {
 
     final List<PositionedElement> positionedElements = [];
 
-    // CABEÇALHO DE VALIDAÇÃO
-    print('\n╔════════════════════════════════════════════════════════╗');
-    print('║   VALIDAÇÃO RIGOROSA DE COMPASSOS                      ║');
-    print('║   Total: ${staff.measures.length} compasso(s)                                  ║');
-    print('╚════════════════════════════════════════════════════════╝\n');
-
     // Sistema de herança de TimeSignature
     TimeSignature? currentTimeSignature;
+
+    // Contador de validação (apenas para estatísticas)
+    int validMeasures = 0;
+    int invalidMeasures = 0;
 
     for (int i = 0; i < staff.measures.length; i++) {
       final measure = staff.measures[i];
@@ -188,53 +207,34 @@ class LayoutEngine {
       // Se não encontrou, usar o TimeSignature herdado
       final timeSignatureToUse = measureTimeSignature ?? currentTimeSignature;
 
-      // DEBUG: Ver elementos do compasso ANTES de validar
-      print('  📋 Compasso ${i + 1}: ${measure.elements.length} elementos');
-      for (var j = 0; j < measure.elements.length; j++) {
-        print('     [$j] ${measure.elements[j].runtimeType}');
+      // Definir TimeSignature herdado no Measure para validação preventiva
+      if (timeSignatureToUse != null && measureTimeSignature == null) {
+        measure.inheritedTimeSignature = timeSignatureToUse;
       }
 
-      // VALIDAÇÃO CRÍTICA: Sistema rigoroso baseado em teoria musical
-      // IMPORTANTE: Passar o timeSignature herdado!
-      final validation = timeSignatureToUse != null
-          ? MeasureValidator.validateWithTimeSignature(
-              measure,
-              timeSignatureToUse,
-              allowAnacrusis: isFirst && i == 0,
-            )
-          : MeasureValidator.validate(
-              measure,
-              allowAnacrusis: isFirst && i == 0,
-            );
-      
-      // SEMPRE mostrar status de validação (usar timeSignature herdado para display)
+      // Validação silenciosa (apenas contar estatísticas)
       if (timeSignatureToUse != null) {
-        final displayNum = timeSignatureToUse.numerator;
-        final displayDen = timeSignatureToUse.denominator;
-        final expectedCap = displayNum / displayDen;
-        
-        if (validation.actualDuration == 0) {
-          // Compasso vazio - mostrar como aviso
-          print('⚠️ Compasso ${i + 1}: VAZIO ($displayNum/$displayDen - esperado: ${expectedCap.toStringAsFixed(3)} unidades)');
+        final validation = MeasureValidator.validateWithTimeSignature(
+          measure,
+          timeSignatureToUse,
+          allowAnacrusis: isFirst && i == 0,
+        );
+
+        if (validation.isValid) {
+          validMeasures++;
         } else {
-          final diff = (validation.actualDuration - expectedCap).abs();
-          if (diff < MeasureValidator.tolerance) {
-            print('✓ Compasso ${i + 1}: VÁLIDO ($displayNum/$displayDen = ${validation.actualDuration.toStringAsFixed(3)} unidades)');
-          } else {
-            print('\n⚠️ COMPASSO ${i + 1} INVÁLIDO:');
-            print('   Fórmula: $displayNum/$displayDen');
-            print('   Esperado: ${expectedCap.toStringAsFixed(3)} unidades');
-            print('   Atual: ${validation.actualDuration.toStringAsFixed(3)} unidades');
-            print('   Diferença: ${diff.toStringAsFixed(4)} unidades');
-            if (diff > 0) {
-              print('   ❌ EXCESSO - Remova figuras!');
-            } else {
-              print('   ❌ FALTA - Adicione pausas ou notas!');
-            }
+          invalidMeasures++;
+
+          // Apenas mostrar erro se verbose ativado
+          if (verboseValidation) {
+            final expectedCap =
+                timeSignatureToUse.numerator / timeSignatureToUse.denominator;
+            final diff = (validation.actualDuration - expectedCap).abs();
+            print(
+              'Compasso ${i + 1}: INVALIDO (esperado: ${expectedCap.toStringAsFixed(3)}, atual: ${validation.actualDuration.toStringAsFixed(3)}, diff: ${diff.toStringAsFixed(4)})',
+            );
           }
         }
-      } else {
-        print('✗ Compasso ${i + 1}: SEM FÓRMULA DE COMPASSO');
       }
 
       final measureWidth = _calculateMeasureWidthCursor(measure, isFirst);
@@ -245,17 +245,19 @@ class LayoutEngine {
 
       _layoutMeasureCursor(measure, cursor, positionedElements, isFirst);
 
+      // CORREÇÃO: Adicionar padding ANTES da barline, não depois!
       if (!isLast) {
+        cursor.advance(measureEndPadding * staffSpace);
         cursor.addBarline(positionedElements);
       }
 
       cursor.endMeasure();
     }
 
-    // RODAPÉ DE VALIDAÇÃO
-    print('\n╔════════════════════════════════════════════════════════╗');
-    print('║   VALIDAÇÃO CONCLUÍDA                                  ║');
-    print('╚════════════════════════════════════════════════════════╝\n');
+    // Relatório resumido (apenas se verbose)
+    if (verboseValidation && (validMeasures + invalidMeasures) > 0) {
+      print('Validacao: $validMeasures validos, $invalidMeasures invalidos');
+    }
 
     return positionedElements;
   }
@@ -336,7 +338,10 @@ class LayoutEngine {
       if (i > 0) {
         // CORREÇÃO VISUAL #2: Usar espaçamento rítmico ao invés de constante
         final previousElement = musicalElements[i - 1];
-        final rhythmicSpacing = _calculateRhythmicSpacing(element, previousElement);
+        final rhythmicSpacing = _calculateRhythmicSpacing(
+          element,
+          previousElement,
+        );
         cursor.advance(rhythmicSpacing);
       }
 
@@ -348,48 +353,56 @@ class LayoutEngine {
   bool _isSystemElement(MusicalElement element) {
     return element is Clef ||
         element is KeySignature ||
-        element is TimeSignature;
+        element is TimeSignature ||
+        element is TempoMark; // TempoMark não ocupa espaço horizontal
   }
 
-  // CORREÇÃO TIPOGRÁFICA SMuFL: Espaçamento inteligente baseado em padrões
+  // ESPAÇAMENTO APÓS ELEMENTOS DE SISTEMA: MÍNIMO necessário
   double _calculateSpacingAfterSystemElementsCorrected(
     List<MusicalElement> systemElements,
     List<MusicalElement> musicalElements,
   ) {
-    // CORRIGIDO: 2.0 ainda muito apertado após elementos de sistema
-    double baseSpacing = staffSpace * 2.5;
+    // Espaço MÍNIMO após elementos de sistema
+    double baseSpacing = staffSpace * 1.2; // MUITO REDUZIDO!
 
     bool hasClef = systemElements.any((e) => e is Clef);
-    if (hasClef) {
-      // CORRIGIDO: Mínimo de 3.0 staff spaces após clave
-      baseSpacing = staffSpace * 3.0;
+    bool hasTimeSignature = systemElements.any((e) => e is TimeSignature);
+
+    if (hasClef && hasTimeSignature) {
+      // Se tem clave E fórmula de compasso, reduzir ainda mais
+      baseSpacing = staffSpace * 1.0; // MÍNIMO!
+    } else if (hasClef) {
+      baseSpacing = staffSpace * 1.2;
     }
 
+    // Armadura com muitos acidentes precisa de um pouco mais
     for (final element in systemElements) {
       if (element is KeySignature && element.count.abs() >= 4) {
-        baseSpacing += staffSpace * 0.5;
+        baseSpacing += staffSpace * 0.3; // Pequeno incremento
       }
     }
 
-    // CORREÇÃO: Verificar se primeira nota tem acidente
+    // CORREÇÃO: Verificar se primeira nota tem acidente EXPLÍCITO
     if (musicalElements.isNotEmpty) {
       final firstMusicalElement = musicalElements.first;
 
       if (firstMusicalElement is Note &&
           firstMusicalElement.pitch.accidentalGlyph != null) {
-        baseSpacing += staffSpace * 1.2; // Mais espaço para acidente
+        baseSpacing += staffSpace * 0.8; // Espaço para acidente explícito
       } else if (firstMusicalElement is Chord) {
-        // Verificar se alguma nota do acorde tem acidente
         bool hasAccidental = firstMusicalElement.notes.any(
           (note) => note.pitch.accidentalGlyph != null,
         );
         if (hasAccidental) {
-          baseSpacing += staffSpace * 1.2;
+          baseSpacing += staffSpace * 0.8;
         }
       }
     }
 
-    return baseSpacing.clamp(staffSpace * 2.0, staffSpace * 5.0);
+    return baseSpacing.clamp(
+      staffSpace * 1.0,
+      staffSpace * 3.0,
+    ); // Limites reduçidos
   }
 
   double _getElementWidthSimple(MusicalElement element) {
@@ -439,7 +452,8 @@ class LayoutEngine {
         // Identificar tipo de acidente corretamente
         if (glyphName.contains('Flat') || glyphName.contains('flat')) {
           accWidth = accidentalFlatWidth;
-        } else if (glyphName.contains('Natural') || glyphName.contains('natural')) {
+        } else if (glyphName.contains('Natural') ||
+            glyphName.contains('natural')) {
           accWidth = 0.92; // Largura típica de natural
         } else if (glyphName.contains('DoubleSharp')) {
           accWidth = 1.0; // Largura de dobrado sustenido
@@ -469,7 +483,8 @@ class LayoutEngine {
 
           if (glyphName.contains('Flat') || glyphName.contains('flat')) {
             accWidth = accidentalFlatWidth;
-          } else if (glyphName.contains('Natural') || glyphName.contains('natural')) {
+          } else if (glyphName.contains('Natural') ||
+              glyphName.contains('natural')) {
             accWidth = 0.92;
           } else if (glyphName.contains('DoubleSharp')) {
             accWidth = 1.0;
@@ -491,15 +506,17 @@ class LayoutEngine {
     if (element is Dynamic) return 2.0 * staffSpace;
     if (element is Ornament) return 1.0 * staffSpace;
     if (element is Tuplet) return 3.0 * staffSpace;
+    if (element is TempoMark)
+      return 0.0; // TempoMark renderizado acima, sem largura
 
     return staffSpace;
   }
 
   /// CORREÇÃO VISUAL #2: Calcula espaçamento rítmico baseado na duração
-  /// 
+  ///
   /// Implementa espaçamento proporcional à duração das notas conforme
   /// práticas profissionais de tipografia musical (Behind Bars, Ted Ross)
-  /// 
+  ///
   /// @param currentElement Elemento atual
   /// @param previousElement Elemento anterior (opcional)
   /// @return Espaçamento em pixels
@@ -509,19 +526,19 @@ class LayoutEngine {
   ) {
     // Base: espaçamento mínimo entre notas (semínima como referência)
     const double baseSpacing = noteMinSpacing;
-    
-    // Fatores de espaçamento por duração (relativo à semínima = 1.0)
-    // Valores baseados em OpenSheetMusicDisplay e práticas profissionais
+
+    // Fatores de espaçamento PROPORCIONAIS (modelo √2 aproximado)
+    // Progressão geométrica suave para proporção visual correta
     final durationFactors = {
-      DurationType.whole: 2.0,      // Semibreve: 2x
-      DurationType.half: 1.5,       // Mínima: 1.5x
-      DurationType.quarter: 1.0,    // Semínima: 1x (base)
-      DurationType.eighth: 0.85,    // Colcheia: 0.85x
-      DurationType.sixteenth: 0.75, // Semicolcheia: 0.75x
-      DurationType.thirtySecond: 0.65,  // Fusa: 0.65x
-      DurationType.sixtyFourth: 0.6,    // Semifusa: 0.6x
+      DurationType.whole: 2.0, // Semibreve: 2x
+      DurationType.half: 1.5, // Mínima: 1.5x (√2 ≈ 1.41)
+      DurationType.quarter: 1.0, // Semínima: 1x (base)
+      DurationType.eighth: 0.8, // Colcheia: 0.8x
+      DurationType.sixteenth: 0.7, // Semicolcheia: 0.7x
+      DurationType.thirtySecond: 0.6, // Fusa: 0.6x
+      DurationType.sixtyFourth: 0.55, // Semifusa: 0.55x
     };
-    
+
     // Obter duração do elemento atual
     DurationType? currentDuration;
     if (currentElement is Note) {
@@ -531,40 +548,43 @@ class LayoutEngine {
     } else if (currentElement is Rest) {
       currentDuration = currentElement.duration.type;
     }
-    
+
     // Se não for elemento musical rítmico, usar espaçamento base
     if (currentDuration == null) {
       return baseSpacing * staffSpace;
     }
-    
+
     // Aplicar fator de duração
     final factor = durationFactors[currentDuration] ?? 1.0;
     double spacing = baseSpacing * factor * staffSpace;
-    
-    // AJUSTE: Espaçamento adicional para pausas (mais espaço visual)
+
+    // AJUSTE: Espaçamento adicional para pausas (80% conforme Gould)
     if (currentElement is Rest) {
-      spacing *= 1.2;
+      spacing *= 1.15; // Pausas têm pouco mais ar
     }
-    
+
     // AJUSTE: Espaçamento adicional se elemento anterior tem ponto de aumentação
     if (previousElement is Note && previousElement.duration.dots > 0) {
-      spacing += staffSpace * 0.3 * previousElement.duration.dots;
+      spacing +=
+          staffSpace * 0.2 * previousElement.duration.dots; // REDUZIDO de 0.3
     } else if (previousElement is Chord && previousElement.duration.dots > 0) {
-      spacing += staffSpace * 0.3 * previousElement.duration.dots;
+      spacing +=
+          staffSpace * 0.2 * previousElement.duration.dots; // REDUZIDO de 0.3
     }
-    
+
     // AJUSTE: Mais espaçamento se elemento anterior tem acidente
-    if (previousElement is Note && previousElement.pitch.accidentalGlyph != null) {
-      spacing += staffSpace * 0.2;
+    if (previousElement is Note &&
+        previousElement.pitch.accidentalGlyph != null) {
+      spacing += staffSpace * 0.15; // REDUZIDO de 0.2
     } else if (previousElement is Chord) {
       final hasAccidental = previousElement.notes.any(
-        (note) => note.pitch.accidentalGlyph != null
+        (note) => note.pitch.accidentalGlyph != null,
       );
       if (hasAccidental) {
-        spacing += staffSpace * 0.2;
+        spacing += staffSpace * 0.15; // REDUZIDO de 0.2
       }
     }
-    
+
     return spacing;
   }
 

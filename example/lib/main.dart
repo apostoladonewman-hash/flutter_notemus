@@ -51,7 +51,7 @@ class MusicNotationApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'SMuFL Renderer Exemplos',
+      title: 'Flutter Notemus Exemplos',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
@@ -149,7 +149,7 @@ class _MainScreenState extends State<MainScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'SMuFL Renderer',
+                    'Flutter Notemus',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -196,7 +196,8 @@ class _MainScreenState extends State<MainScreen> {
       case 3:
         return const Icon(Icons.superscript_outlined); // Acidentes
       case 4:
-        return const Icon(Icons.arrow_drop_down_circle_outlined); // Articulações
+        return const Icon(
+            Icons.arrow_drop_down_circle_outlined); // Articulações
       case 5:
         return const Icon(Icons.more_horiz); // Pontos e Linhas
       case 6:

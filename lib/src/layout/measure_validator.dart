@@ -109,8 +109,6 @@ class MeasureValidator {
     int elementIndex = 0;
 
     for (final element in measure.elements) {
-      print('    🔍 Processando: ${element.runtimeType}');
-      
       if (element is Note) {
         final duration = _calculateNoteDuration(element, warnings);
         actualDuration += duration;
@@ -270,9 +268,7 @@ class MeasureValidator {
   /// Calcula duração de uma nota
   static double _calculateNoteDuration(Note note, List<String> warnings) {
     final baseValue = _calculateBaseValue(note.duration.type);
-    final result = _applyModifiers(baseValue, note.duration, warnings);
-    print('    🔍 Note: baseValue=$baseValue, result=$result, type=${note.duration.type}');
-    return result;
+    return _applyModifiers(baseValue, note.duration, warnings);
   }
 
   /// Calcula duração de uma pausa (mesmo valor que nota)
@@ -446,8 +442,6 @@ class MeasureValidator {
     int elementIndex = 0;
 
     for (final element in measure.elements) {
-      print('    🔍 Processando: ${element.runtimeType}');
-      
       if (element is Note) {
         final duration = _calculateNoteDuration(element, warnings);
         actualDuration += duration;
