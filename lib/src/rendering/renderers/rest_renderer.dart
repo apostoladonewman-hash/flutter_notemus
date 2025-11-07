@@ -45,24 +45,25 @@ class RestRenderer extends BaseGlyphRenderer {
     switch (rest.duration.type) {
       case DurationType.whole:
         glyphName = 'restWhole';
-        // CORREÇÃO MUSICOLÓGICA: Pausa de semibreve fica ABAIXO da 4ª linha
-        // staffPosition = 2 (4ª linha, contando de baixo)
+        // Behind Bars: Whole rest hangs BELOW the 4th line (from bottom)
+        // staffPosition = 2 (4th line: 2 staff positions above center)
+        // Visual: barra superior toca a linha 4, pausa "pendurada"
         staffPosition = 2;
         break;
       case DurationType.half:
         glyphName = 'restHalf';
-        // CORREÇÃO MUSICOLÓGICA: Pausa de mínima fica EM CIMA da 3ª linha (linha do meio)
-        // staffPosition = 0 (linha central da pauta)
+        // Behind Bars: Half rest sits ON the 3rd line (middle line)
+        // staffPosition = 0 (center line of staff)
+        // Visual: barra inferior toca a linha 3, pausa "apoiada"
         staffPosition = 0;
         break;
       case DurationType.quarter:
         glyphName = 'restQuarter';
-        // Pausa de semínima centrada
+        // Quarter rest and smaller: centered on staff
         staffPosition = 0;
         break;
       case DurationType.eighth:
         glyphName = 'rest8th';
-        // Pausas menores centradas
         staffPosition = 0;
         break;
       case DurationType.sixteenth:

@@ -44,11 +44,20 @@ class MusicScore extends StatefulWidget {
 
 class _MusicScoreState extends State<MusicScore> {
   late Future<void> _metadataFuture;
+  final ScrollController _horizontalController = ScrollController();
+  final ScrollController _verticalController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _metadataFuture = SmuflMetadata().load();
+  }
+
+  @override
+  void dispose() {
+    _horizontalController.dispose();
+    _verticalController.dispose();
+    super.dispose();
   }
 
   @override
@@ -84,16 +93,23 @@ class _MusicScoreState extends State<MusicScore> {
 
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
+              controller: _horizontalController,
               child: SingleChildScrollView(
                 scrollDirection: Axis.vertical,
-                child: CustomPaint(
-                  size: Size(constraints.maxWidth, totalHeight),
-                  painter: MusicScorePainter(
-                    positionedElements: positionedElements,
-                    metadata: SmuflMetadata(),
-                    theme: widget.theme,
-                    staffSpace: widget.staffSpace,
-                    layoutEngine: layoutEngine,
+                controller: _verticalController,
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    size: Size(constraints.maxWidth, totalHeight),
+                    painter: MusicScorePainter(
+                      positionedElements: positionedElements,
+                      metadata: SmuflMetadata(),
+                      theme: widget.theme,
+                      staffSpace: widget.staffSpace,
+                      layoutEngine: layoutEngine,
+                      viewportSize: constraints.biggest,
+                      scrollOffsetX: _horizontalController.hasClients ? _horizontalController.offset : 0.0,
+                      scrollOffsetY: _verticalController.hasClients ? _verticalController.offset : 0.0,
+                    ),
                   ),
                 ),
               ),
@@ -122,13 +138,21 @@ class _MusicScoreState extends State<MusicScore> {
 }
 
 /// Painter customizado para renderização da partitura
-/// VERSÃO CORRIGIDA: Usa StaffRenderer melhorado
+/// VERSÃO OTIMIZADA: Canvas Clipping + Viewport Culling
+///
+/// **OTIMIZAÇÕES:**
+/// - Renderiza apenas sistemas visíveis no viewport
+/// - Usa clipRect para segurança
+/// - RepaintBoundary para evitar repaints desnecessários
 class MusicScorePainter extends CustomPainter {
   final List<PositionedElement> positionedElements;
   final SmuflMetadata metadata;
   final MusicScoreTheme theme;
   final double staffSpace;
   final LayoutEngine? layoutEngine;
+  final Size viewportSize;
+  final double scrollOffsetX;
+  final double scrollOffsetY;
 
   MusicScorePainter({
     required this.positionedElements,
@@ -136,11 +160,21 @@ class MusicScorePainter extends CustomPainter {
     required this.theme,
     required this.staffSpace,
     this.layoutEngine,
+    required this.viewportSize,
+    required this.scrollOffsetX,
+    required this.scrollOffsetY,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (metadata.isNotLoaded || positionedElements.isEmpty) return;
+
+    // OTIMIZAÇÃO 1: Clip canvas ao viewport
+    canvas.clipRect(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    // OTIMIZAÇÃO 2: Calcular sistemas visíveis
+    final systemHeight = staffSpace * 10;
+    final visibleSystemRange = _calculateVisibleSystems(systemHeight);
 
     // Agrupar elementos por sistema
     final Map<int, List<PositionedElement>> systemGroups = {};
@@ -149,11 +183,16 @@ class MusicScorePainter extends CustomPainter {
       systemGroups.putIfAbsent(element.system, () => []).add(element);
     }
 
-    // Renderizar cada sistema
+    // OTIMIZAÇÃO 3: Renderizar APENAS sistemas visíveis
     for (final entry in systemGroups.entries) {
       final systemIndex = entry.key;
-      final elements = entry.value;
 
+      // Skip sistemas fora do viewport
+      if (!visibleSystemRange.contains(systemIndex)) {
+        continue;
+      }
+
+      final elements = entry.value;
       final systemY = (systemIndex * staffSpace * 10) + (staffSpace * 5);
       final staffBaseline = Offset(0, systemY);
 
@@ -170,14 +209,43 @@ class MusicScorePainter extends CustomPainter {
 
       renderer.renderStaff(canvas, elements, size, layoutEngine: layoutEngine);
     }
+
+    // DEBUG: Para ver quantos sistemas foram renderizados vs pulados:
+    // int rendered = visibleSystemRange.length;
+    // int skipped = systemGroups.length - rendered;
+    // debugPrint('Canvas Clipping: Renderizados=$rendered, Pulados=$skipped');
+  }
+
+  /// Calcula quais sistemas estão visíveis no viewport atual
+  ///
+  /// Retorna um range (Set) de índices de sistemas que intersectam o viewport.
+  /// Adiciona margem de 1 sistema acima e abaixo para suavidade no scroll.
+  Set<int> _calculateVisibleSystems(double systemHeight) {
+    // Viewport Y range (com margem)
+    final margin = systemHeight; // 1 sistema de margem
+    final viewportTop = scrollOffsetY - margin;
+    final viewportBottom = scrollOffsetY + viewportSize.height + margin;
+
+    // Calcular sistemas visíveis
+    final firstSystem = (viewportTop / systemHeight).floor().clamp(0, 999);
+    final lastSystem = (viewportBottom / systemHeight).ceil().clamp(0, 999);
+
+    // Retornar range como Set
+    return Set<int>.from(
+      List<int>.generate(lastSystem - firstSystem + 1, (i) => firstSystem + i),
+    );
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     if (oldDelegate is! MusicScorePainter) return true;
 
+    // Repintar se viewport ou conteúdo mudaram
     return oldDelegate.positionedElements.length != positionedElements.length ||
         oldDelegate.theme != theme ||
-        oldDelegate.staffSpace != staffSpace;
+        oldDelegate.staffSpace != staffSpace ||
+        oldDelegate.scrollOffsetX != scrollOffsetX ||
+        oldDelegate.scrollOffsetY != scrollOffsetY ||
+        oldDelegate.viewportSize != viewportSize;
   }
 }
