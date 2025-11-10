@@ -70,17 +70,6 @@ class BarlineRenderer {
     final barlineHeight = coordinates.staffSpace * barlineHeightMultiplier;
 
     final renderPosition = Offset(x, topY);
-    
-    // 🐛 DEBUG: Log para barras de repetição
-    if (barline.type == BarlineType.repeatForward || 
-        barline.type == BarlineType.repeatBackward || 
-        barline.type == BarlineType.repeatBoth) {
-      print('🔁 [BARLINE REPEAT] type=${barline.type}, glyph=$glyphName');
-      print('   Original position.dx: ${position.dx.toStringAsFixed(1)}');
-      print('   X offset applied: ${xOffset.toStringAsFixed(2)} SS = ${(xOffset * coordinates.staffSpace).toStringAsFixed(1)}px');
-      print('   Final X: ${x.toStringAsFixed(1)}');
-      print('   RenderPosition: $renderPosition');
-    }
 
     // Renderizar glyph SMuFL oficial da Bravura!
     glyphRenderer.drawGlyph(

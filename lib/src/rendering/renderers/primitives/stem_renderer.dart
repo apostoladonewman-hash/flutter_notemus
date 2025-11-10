@@ -15,14 +15,12 @@ class StemRenderer extends BaseGlyphRenderer {
   final SMuFLPositioningEngine positioningEngine;
 
   /// Ajuste visual empírico em X para haste PARA CIMA (stemUp = true)
-  /// Valor determinado através de análise visual comparativa.
-  /// TODO: Investigar se deve ser proporcional ao staffSpace
-  static const double stemUpXOffset = 0.7; // pixels
+  /// Valor proporcional ao staffSpace (em unidades de space)
+  static const double stemUpXOffsetSpaces = 0.07; // ~0.7px para staffSpace = 10px
 
   /// Ajuste visual empírico em X para haste PARA BAIXO (stemUp = false)
-  /// Valor determinado através de análise visual comparativa.
-  /// TODO: Investigar se deve ser proporcional ao staffSpace
-  static const double stemDownXOffset = -0.8; // pixels (ajustar se necessário)
+  /// Valor proporcional ao staffSpace (em unidades de space)
+  static const double stemDownXOffsetSpaces = -0.08; // ~-0.8px para staffSpace = 10px
 
   StemRenderer({
     required super.metadata,
@@ -62,7 +60,8 @@ class StemRenderer extends BaseGlyphRenderer {
 
     // 2️⃣ Converter âncora de staff spaces → pixels com ajuste visual
     // CORREÇÃO CRÍTICA: SMuFL usa Y+ para cima, Flutter usa Y+ para baixo
-    final xOffset = stemUp ? stemUpXOffset : stemDownXOffset;
+    // Agora proporcionais ao staffSpace para escalar corretamente
+    final xOffset = (stemUp ? stemUpXOffsetSpaces : stemDownXOffsetSpaces) * coordinates.staffSpace;
     final stemAnchorPixels = Offset(
       stemAnchor.dx * coordinates.staffSpace - xOffset, // Ajuste por direção
       -stemAnchor.dy * coordinates.staffSpace, // Y: INVERTER eixo!

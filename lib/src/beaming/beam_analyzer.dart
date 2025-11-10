@@ -157,34 +157,9 @@ class BeamAnalyzer {
       throw ArgumentError('Posições Y das notas não encontradas');
     }
 
-    // ✅ USAR EXATAMENTE A MESMA LÓGICA DO GroupRenderer!
-    // Calcular máximo de beams no grupo
-    int maxBeams = 0;
-    for (final note in group.notes) {
-      final beams = _getBeamCount(note.duration);
-      if (beams > maxBeams) maxBeams = beams;
-    }
-
-    // Usar SMuFLPositioningEngine para calcular altura do beam (IGUAL ao GroupRenderer!)
-    final beamHeightSpaces = positioningEngine.calculateBeamHeight(
-      staffPosition: noteStaffPositions![firstNote]!,
-      stemUp: group.stemDirection == StemDirection.up,
-      allStaffPositions: noteStaffPositions.values.toList(),
-      beamCount: maxBeams,
-    );
-    final beamHeightPixels = beamHeightSpaces * staffSpace;
-
-    // Calcular posição média das notas (IGUAL ao GroupRenderer!)
-    final avgNoteY = (firstNoteY + lastNoteY) / 2;
-
-    // Calcular Y base do beam (IGUAL ao GroupRenderer!)
-    final beamBaseY = group.stemDirection == StemDirection.up
-        ? avgNoteY - beamHeightPixels
-        : avgNoteY + beamHeightPixels;
-
-    // Calcular ângulo usando positioning engine (IGUAL ao GroupRenderer!)
+    // Calcular ângulo usando positioning engine
     final beamAngleSpaces = positioningEngine.calculateBeamAngle(
-      noteStaffPositions: noteStaffPositions.values.toList(),
+      noteStaffPositions: noteStaffPositions!.values.toList(),
       stemUp: group.stemDirection == StemDirection.up,
     );
     final beamAnglePixels = beamAngleSpaces * staffSpace;
@@ -193,9 +168,80 @@ class BeamAnalyzer {
     final xDistance = group.rightX - group.leftX;
     final beamSlope = xDistance > 0 ? beamAnglePixels / xDistance : 0.0;
 
-    // Definir leftY e rightY usando interpolação linear (IGUAL ao GroupRenderer!)
+    // Calcular beam inicial baseado na média (posição inicial)
+    final avgNoteY = (firstNoteY + lastNoteY) / 2;
+    final minStemHeight = 3.5 * staffSpace;
+
+    final beamBaseY = group.stemDirection == StemDirection.up
+        ? avgNoteY - minStemHeight
+        : avgNoteY + minStemHeight;
+
+    // Definir leftY e rightY com a inclinação
     group.leftY = beamBaseY;
     group.rightY = beamBaseY + (beamSlope * xDistance);
+
+    // ✅ CORREÇÃO PRINCIPAL: Ajustar beam baseado na nota extrema
+    _adjustBeamForExtremNote(group, noteYPositions);
+  }
+
+  /// Ajusta beam para que a nota extrema tenha exatamente a altura mínima
+  /// Nota extrema = nota mais alta (stems up) ou mais baixa (stems down)
+  void _adjustBeamForExtremNote(
+    AdvancedBeamGroup group,
+    Map<Note, double> noteYPositions,
+  ) {
+    // Altura mínima de haste SMuFL: 3.5 staff spaces
+    final minStemHeight = 3.5 * staffSpace;
+
+    // Encontrar nota extrema e sua posição
+    Note? extremeNote;
+    double? extremeNoteY;
+
+    for (final note in group.notes) {
+      final noteY = noteYPositions[note];
+      if (noteY == null) continue;
+
+      if (extremeNoteY == null) {
+        extremeNote = note;
+        extremeNoteY = noteY;
+      } else {
+        // Para stems up: queremos nota mais alta (menor Y)
+        // Para stems down: queremos nota mais baixa (maior Y)
+        if (group.stemDirection == StemDirection.up) {
+          if (noteY < extremeNoteY) {
+            extremeNote = note;
+            extremeNoteY = noteY;
+          }
+        } else {
+          if (noteY > extremeNoteY) {
+            extremeNote = note;
+            extremeNoteY = noteY;
+          }
+        }
+      }
+    }
+
+    if (extremeNote == null || extremeNoteY == null) return;
+
+    // Encontrar posição X da nota extrema
+    final extremeNoteIndex = group.notes.indexOf(extremeNote);
+    final t = group.notes.length > 1 ? extremeNoteIndex / (group.notes.length - 1) : 0.0;
+    final extremeStemX = group.leftX + (t * (group.rightX - group.leftX));
+
+    // Calcular onde o beam deveria estar para essa nota ter altura mínima
+    final targetBeamY = group.stemDirection == StemDirection.up
+        ? extremeNoteY - minStemHeight
+        : extremeNoteY + minStemHeight;
+
+    // Calcular onde o beam está atualmente para essa nota
+    final currentBeamY = group.interpolateBeamY(extremeStemX);
+
+    // Calcular ajuste necessário
+    final adjustment = targetBeamY - currentBeamY;
+
+    // Aplicar ajuste mantendo a inclinação
+    group.leftY += adjustment;
+    group.rightY += adjustment;
   }
 
 

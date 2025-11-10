@@ -17,9 +17,13 @@ import 'base_glyph_renderer.dart';
 /// - "Behind Bars" by Elaine Gould - Chapter on Score Layout
 /// - SMuFL specification for brace glyphs
 class BracketRenderer extends BaseGlyphRenderer {
+  final MusicScoreTheme theme;
+
   BracketRenderer({
     required super.coordinates,
-    required super.theme,
+    required super.metadata,
+    required super.glyphSize,
+    required this.theme,
   });
 
   /// Render bracket/brace for a staff group

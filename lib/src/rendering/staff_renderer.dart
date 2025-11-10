@@ -34,13 +34,13 @@ class StaffRenderer {
   // Fórmula: endX = bounds.endX + (staffSpace + systemEndMargin)
   //
   // Aplica-se a:
-  //   - BarlineType.single (barra simples) 
+  //   - BarlineType.single (barra simples)
   //   - BarlineType.double (barra dupla)
   //   - BarlineType.dashed (barra tracejada)
   //   - Todos os tipos EXCETO BarlineType.final_
   //
   // Valores sugeridos:
-  //   -12.0 = Linhas terminam exatamente na barra de compasso 
+  //   -12.0 = Linhas terminam exatamente na barra de compasso
   //    0.0 = Margem padrão de 1 staff space
   //   -3.0 = Linhas terminam um pouco antes da barra
   static const double systemEndMargin =
@@ -139,7 +139,8 @@ class StaffRenderer {
     beamRenderer = BeamRenderer(
       theme: theme,
       staffSpace: coordinates.staffSpace,
-      noteheadWidth: metadata.getGlyphWidth('noteheadBlack') * coordinates.staffSpace,
+      noteheadWidth:
+          metadata.getGlyphWidth('noteheadBlack') * coordinates.staffSpace,
       positioningEngine: positioningEngine,
     );
 
@@ -205,7 +206,7 @@ class StaffRenderer {
       noteRenderer: noteRenderer,
       restRenderer: restRenderer,
     );
-    
+
     // ✅ Inicializar SlurRenderer profissional
     slurRenderer = SlurRenderer(
       staffSpace: coordinates.staffSpace,
@@ -217,37 +218,32 @@ class StaffRenderer {
   final Set<Note> _notesInAdvancedBeams = {};
 
   void renderStaff(
-    Canvas canvas, 
-    List<PositionedElement> elements, 
-    Size size,
-    {LayoutEngine? layoutEngine}
-  ) {
+    Canvas canvas,
+    List<PositionedElement> elements,
+    Size size, {
+    LayoutEngine? layoutEngine,
+  }) {
     // 🐛 DEBUG: Log de elementos
     final chordCount = elements.where((e) => e.element is Chord).length;
-    print('\n📊 [STAFF RENDERER] renderStaff() iniciado:');
-    print('   Total de elementos: ${elements.length}');
-    print('   Acordes detectados: $chordCount');
-    
+
     // Limpar set de notas beamed
     _notesInAdvancedBeams.clear();
-    
+
     // Coletar notas que estão em advanced beam groups
     if (layoutEngine != null) {
       for (final group in layoutEngine.advancedBeamGroups) {
         _notesInAdvancedBeams.addAll(group.notes);
       }
     }
-    
+
     // Desenhar linhas do pentagrama POR SISTEMA
     _drawStaffLinesBySystem(canvas, elements);
     currentClef = Clef(clefType: ClefType.treble); // Default clef
 
     // Primeira passagem: renderizar elementos individuais
-    print('   🔄 Iniciando renderização de elementos individuais...');
     for (final positioned in elements) {
       _renderElement(canvas, positioned);
     }
-    print('   ✅ Renderização de elementos individuais concluída!');
 
     // Segunda passagem: renderizar ADVANCED BEAMS (se disponível)
     if (layoutEngine != null && layoutEngine.advancedBeamGroups.isNotEmpty) {
@@ -270,7 +266,7 @@ class StaffRenderer {
       if (layoutEngine == null || layoutEngine.advancedBeamGroups.isEmpty) {
         groupRenderer.renderBeams(canvas, elements, currentClef!);
       }
-      
+
       // ✅ USAR SLURRENDERER PROFISSIONAL ao invés do GroupRenderer
       final tieGroups = groupRenderer.identifyTieGroups(elements);
       final slurGroups = groupRenderer.identifySlurGroups(elements);
@@ -368,11 +364,7 @@ class StaffRenderer {
     final basePosition = positioned.position;
 
     // 🐛 DEBUG: Log de todos os elementos
-    if (element is Chord) {
-      print('🎵 [STAFF RENDERER] Detectou CHORD! currentClef: ${currentClef != null ? "✅" : "❌"}');
-      print('   Número de notas no acorde: ${element.notes.length}');
-      print('   basePosition: $basePosition');
-    }
+    if (element is Chord) {}
 
     if (element is Clef) {
       currentClef = element;
@@ -391,9 +383,9 @@ class StaffRenderer {
       // Se a nota está em advanced beam, renderizar apenas notehead (sem stem/flag)
       final onlyNotehead = _notesInAdvancedBeams.contains(element);
       noteRenderer.render(
-        canvas, 
-        element, 
-        basePosition, 
+        canvas,
+        element,
+        basePosition,
         currentClef!,
         renderOnlyNotehead: onlyNotehead,
       );
@@ -402,9 +394,7 @@ class StaffRenderer {
     } else if (element is Barline) {
       barlineRenderer.render(canvas, element, basePosition);
     } else if (element is Chord && currentClef != null) {
-      print('   ➡️ Chamando chordRenderer.render()...');
       chordRenderer.render(canvas, element, basePosition, currentClef!);
-      print('   ✅ chordRenderer.render() concluído!');
     } else if (element is Tuplet && currentClef != null) {
       tupletRenderer.render(canvas, element, basePosition, currentClef!);
     } else if (element is RepeatMark) {

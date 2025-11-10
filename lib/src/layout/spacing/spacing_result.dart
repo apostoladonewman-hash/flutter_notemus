@@ -275,8 +275,27 @@ class SystemData {
           if (element.duration.realValue < shortest) {
             shortest = element.duration.realValue;
           }
+        } else if (element is Chord) {
+          // Para acordes, verificar todas as notas do acorde
+          for (final note in element.notes) {
+            if (note.duration.realValue < shortest) {
+              shortest = note.duration.realValue;
+            }
+          }
+        } else if (element is Tuplet) {
+          // Para tuplets, verificar todas as notas do grupo
+          for (final tupletElement in element.elements) {
+            if (tupletElement is Note) {
+              if (tupletElement.duration.realValue < shortest) {
+                shortest = tupletElement.duration.realValue;
+              }
+            } else if (tupletElement is Rest) {
+              if (tupletElement.duration.realValue < shortest) {
+                shortest = tupletElement.duration.realValue;
+              }
+            }
+          }
         }
-        // TODO: Chord, Tuplet
       }
     }
 

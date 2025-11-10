@@ -86,9 +86,7 @@ class ProfessionalJsonExample extends StatelessWidget {
     ''';
 
     // 📊 PARSEAR JSON → STAFF
-    print('🎵 Parseando JSON profissional...');
     final staff = JsonMusicParser.parseStaff(jsonString);
-    print('✅ Staff criado com ${staff.measures.length} compassos');
 
     return Scaffold(
       backgroundColor: Colors.grey[50],

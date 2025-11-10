@@ -35,7 +35,7 @@ class OrnamentRenderer extends BaseGlyphRenderer {
         _renderArpeggio(canvas, notePos, notePos.dy, notePos.dy);
         continue;
       }
-      
+
       // ✅ TRATAMENTO ESPECIAL: Grace notes (appoggiaturas e acciaccaturas)
       if (_isGraceNote(ornament.type)) {
         _renderGraceNote(canvas, note, ornament, notePos, staffPosition, currentClef);
@@ -167,20 +167,20 @@ class OrnamentRenderer extends BaseGlyphRenderer {
 
     if (ornamentAbove) {
       // CORREÇÃO DINÂMICA: Ornamentos devem ter posicionamento inteligente
-      // 
+      //
       // REGRA 1: Notas no pentagrama → ornamento acima do pentagrama (linha 5)
       // REGRA 2: Notas muito altas (>6) → ornamento acima da nota com clearance mínimo
       // REGRA 3: Se tem haste para cima, considerar ponta da haste
-      
+
       final line5Y = coordinates.getStaffLineY(5);
-      
+
       // Para notas muito altas (linhas suplementares superiores)
       if (staffPosition > 6) {
         // Ornamento acima da nota, não acima do pentagrama
         // Clearance mínimo: 0.75 staff spaces (ornamentToNoteDistance)
         return noteY - (coordinates.staffSpace * 0.75);
       }
-      
+
       // Para notas dentro ou próximas do pentagrama
       final minOrnamentY = line5Y - (coordinates.staffSpace * 1.2);
 
@@ -192,17 +192,17 @@ class OrnamentRenderer extends BaseGlyphRenderer {
         // Usar o mais alto (menor Y)
         return ornamentYFromStem < minOrnamentY ? ornamentYFromStem : minOrnamentY;
       }
-      
+
       return minOrnamentY;
     } else {
       // CORREÇÃO DINÂMICA: Ornamentos abaixo com mesma lógica
       final line1Y = coordinates.getStaffLineY(1);
-      
+
       // Para notas muito baixas (linhas suplementares inferiores)
       if (staffPosition < -6) {
         return noteY + (coordinates.staffSpace * 0.75);
       }
-      
+
       final maxOrnamentY = line1Y + (coordinates.staffSpace * 1.2);
 
       // Se tem haste para baixo
@@ -211,7 +211,7 @@ class OrnamentRenderer extends BaseGlyphRenderer {
         final ornamentYFromStem = stemTipY + (coordinates.staffSpace * 0.6);
         return ornamentYFromStem > maxOrnamentY ? ornamentYFromStem : maxOrnamentY;
       }
-      
+
       return maxOrnamentY;
     }
   }
@@ -240,16 +240,9 @@ class OrnamentRenderer extends BaseGlyphRenderer {
       OrnamentType.turnInverted: 'ornamentTurnInverted',
       OrnamentType.invertedTurn: 'ornamentTurnInverted',
       OrnamentType.turnSlash: 'ornamentTurnSlash',
-<<<<<<< HEAD
-      // ❌ REMOVIDO: Grace notes não usam mais este mapeamento
-      // OrnamentType.appoggiaturaUp: 'graceNoteAcciaccaturaStemUp',
-      // OrnamentType.appoggiaturaDown: 'graceNoteAcciaccaturaStemDown',
-      // OrnamentType.acciaccatura: 'graceNoteAcciaccaturaStemUp',
-=======
       OrnamentType.appoggiaturaUp: 'graceNoteAppoggiaturaStemUp',  // ✅ FIXED: no slash for appoggiatura
       OrnamentType.appoggiaturaDown: 'graceNoteAppoggiaturaStemDown',  // ✅ FIXED: no slash for appoggiatura
       OrnamentType.acciaccatura: 'graceNoteAcciaccaturaStemUp',  // ✓ Correct: with slash for acciaccatura
->>>>>>> c5448cc155ce3aa72ff3078dcd323b386b810a28
       OrnamentType.fermata: 'fermataAbove',
       OrnamentType.fermataBelow: 'fermataBelow',
       OrnamentType.fermataBelowInverted: 'fermataBelowInverted',
@@ -269,15 +262,14 @@ class OrnamentRenderer extends BaseGlyphRenderer {
     };
     return ornamentGlyphs[type];
   }
-<<<<<<< HEAD
-  
+
   /// Verifica se o ornamento é uma grace note (appoggiatura ou acciaccatura)
   bool _isGraceNote(OrnamentType type) {
     return type == OrnamentType.appoggiaturaUp ||
            type == OrnamentType.appoggiaturaDown ||
            type == OrnamentType.acciaccatura;
   }
-  
+
   /// Renderiza grace note como uma nota pequena na posição correta do pentagrama
   void _renderGraceNote(
     Canvas canvas,
@@ -288,7 +280,7 @@ class OrnamentRenderer extends BaseGlyphRenderer {
     Clef? currentClef,
   ) {
     if (currentClef == null) return;
-    
+
     // ✅ Calcular pitch da grace note
     // Se alternatePitch estiver definido, usar; senão, usar nota principal +/- 1 step
     final Pitch gracePitch;
@@ -298,10 +290,10 @@ class OrnamentRenderer extends BaseGlyphRenderer {
       // Default: nota um step acima ou abaixo
       final steps = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
       final currentIndex = steps.indexOf(mainNote.pitch.step);
-      
+
       String graceStep;
       int graceOctave = mainNote.pitch.octave;
-      
+
       if (graceOrnament.type == OrnamentType.appoggiaturaDown) {
         // Um step abaixo
         if (currentIndex > 0) {
@@ -319,33 +311,33 @@ class OrnamentRenderer extends BaseGlyphRenderer {
           graceOctave++;
         }
       }
-      
+
       gracePitch = Pitch(step: graceStep, octave: graceOctave);
     }
-    
+
     // ✅ Calcular posição Y baseada no pitch da grace note
     final graceStaffPos = StaffPositionCalculator.calculate(
       gracePitch,
       currentClef,
     );
-    
+
     final graceY = StaffPositionCalculator.toPixelY(
       graceStaffPos,
       coordinates.staffSpace,
       coordinates.staffBaseline.dy,
     );
-    
+
     // ✅ Posição X: antes da nota principal (1.5 SS)
     final graceX = mainNotePos.dx - (coordinates.staffSpace * 1.5);
-    
+
     // ✅ Direção da haste (inversa da nota principal para clareza visual)
     final stemUp = graceStaffPos <= 0;
-    
+
     // ✅ Renderizar notehead pequeno (0.7x)
     final graceNoteheadGlyph = 'noteheadBlack';
     final graceNoteheadSize = glyphSize * 0.7;
     final graceStaffSpace = coordinates.staffSpace * 0.7; // Proporcional ao tamanho
-    
+
     drawGlyphWithBBox(
       canvas,
       glyphName: graceNoteheadGlyph,
@@ -355,7 +347,7 @@ class OrnamentRenderer extends BaseGlyphRenderer {
         size: graceNoteheadSize,
       ),
     );
-    
+
     // ✅ Renderizar haste pequena
     // Calcular posição baseada no tamanho do notehead (1.18 SS de largura padrão)
     final noteheadWidth = 1.18 * graceStaffSpace;
@@ -363,16 +355,16 @@ class OrnamentRenderer extends BaseGlyphRenderer {
     final stemPaint = Paint()
       ..color = theme.noteheadColor
       ..strokeWidth = coordinates.staffSpace * 0.1;
-    
+
     // StemUpSE: canto direito inferior, StemDownNW: canto esquerdo superior
-    final stemX = stemUp 
+    final stemX = stemUp
         ? graceX + noteheadWidth * 0.95  // Direita
         : graceX + noteheadWidth * 0.05; // Esquerda
     final stemY1 = graceY;
     final stemY2 = stemUp ? graceY - stemHeight : graceY + stemHeight;
-    
+
     canvas.drawLine(Offset(stemX, stemY1), Offset(stemX, stemY2), stemPaint);
-    
+
     // ✅ BANDEIROLA (flag) - appoggiaturas são colcheias pequenas!
     final flagGlyph = stemUp ? 'flag8thUp' : 'flag8thDown';
     drawGlyphWithBBox(
@@ -384,13 +376,13 @@ class OrnamentRenderer extends BaseGlyphRenderer {
         size: graceNoteheadSize, // Proporcional ao tamanho da grace note
       ),
     );
-    
+
     // ✅ Acciaccatura: adicionar slash através da haste
     if (graceOrnament.type == OrnamentType.acciaccatura) {
       final slashPaint = Paint()
         ..color = theme.noteheadColor
         ..strokeWidth = coordinates.staffSpace * 0.15;
-      
+
       final slashY = stemUp ? graceY - stemHeight * 0.6 : graceY + stemHeight * 0.6;
       canvas.drawLine(
         Offset(stemX - coordinates.staffSpace * 0.25, slashY - coordinates.staffSpace * 0.25),
@@ -398,12 +390,7 @@ class OrnamentRenderer extends BaseGlyphRenderer {
         slashPaint,
       );
     }
-    
-    print('🎼 [GRACE NOTE] type=${graceOrnament.type}');
-    print('   Main note: ${mainNote.pitch.step}${mainNote.pitch.octave} at Y=${mainNotePos.dy.toStringAsFixed(1)}');
-    print('   Grace note: ${gracePitch.step}${gracePitch.octave} at Y=${graceY.toStringAsFixed(1)}');
-    print('   Position: X=${graceX.toStringAsFixed(1)}, staffPos=$graceStaffPos, stemUp=$stemUp');
-=======
+  }
 
   /// Helper function to identify grace note ornaments
   /// Grace notes should be rendered at 60% size per SMuFL standard
@@ -412,6 +399,5 @@ class OrnamentRenderer extends BaseGlyphRenderer {
            type == OrnamentType.appoggiaturaDown ||
            type == OrnamentType.acciaccatura ||
            type == OrnamentType.grace;
->>>>>>> c5448cc155ce3aa72ff3078dcd323b386b810a28
   }
 }

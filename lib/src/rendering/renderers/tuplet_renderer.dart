@@ -41,36 +41,67 @@ class TupletRenderer {
     // Aplicar beams automáticos se apropriado
     final processedElements = _applyAutomaticBeams(tuplet.elements);
 
-    // Renderizar elementos individuais do tuplet
+    // CORREÇÃO CRÍTICA: Pre-calcular todas as posições Y das notas para determinar direção das hastes
+    final List<double> noteYPositions = [];
     for (final element in processedElements) {
       if (element is Note) {
-        // CRÍTICO: Calcular Y correto baseado no pitch da nota
         final noteY = coordinates.getNoteY(
           element.pitch.step,
           element.pitch.octave,
           clef: clefString,
         );
+        noteYPositions.add(noteY);
+      }
+    }
 
-        // NOTA: NoteRenderer vai desenhar as hastes, mas serão cobertas pelos beams customizados
+    // CORREÇÃO CRÍTICA: Calcular direção uniforme das hastes para todo o tuplet
+    bool? forcedStemUp;
+    if (noteYPositions.isNotEmpty) {
+      final staffCenterY = coordinates.staffBaseline.dy;
+      final averageY =
+          noteYPositions.reduce((a, b) => a + b) / noteYPositions.length;
+      // Se média está ABAIXO do centro (Y maior), haste vai para CIMA
+      forcedStemUp = averageY > staffCenterY;
+    }
+
+    // Verificar se precisa desenhar beams
+    final willDrawBeams =
+        processedElements.whereType<Note>().isNotEmpty &&
+        processedElements.whereType<Note>().first.beam != null;
+
+    // Renderizar elementos individuais do tuplet COM direção de haste uniforme
+    currentX = basePosition.dx; // Reset X
+    int noteIndex = 0;
+    for (final element in processedElements) {
+      if (element is Note) {
+        final noteY = noteYPositions[noteIndex];
+        noteIndex++;
+
+        // CORREÇÃO CRÍTICA: Se vai desenhar beams customizados, renderizar apenas noteheads
+        // Se não vai desenhar beams, renderizar nota completa (com haste e flag)
         noteRenderer.render(
           canvas,
           element,
           Offset(currentX, noteY),
           currentClef,
+          forcedStemUp: forcedStemUp,
+          renderOnlyNotehead:
+              willDrawBeams, // Não desenhar hastes se vai ter beams
         );
-        notePositions.add(Offset(currentX, noteY)); // Usar Y calculado!
+        notePositions.add(Offset(currentX, noteY));
         notes.add(element);
         currentX += spacing;
       } else if (element is Rest) {
-        restRenderer.render(canvas, element, Offset(currentX, basePosition.dy));
-        notePositions.add(Offset(currentX, basePosition.dy));
+        // Usar o baseline da pauta para garantir alinhamento correto
+        final restY = coordinates.staffBaseline.dy;
+        restRenderer.render(canvas, element, Offset(currentX, restY));
+        notePositions.add(Offset(currentX, restY));
         currentX += spacing;
       }
     }
 
     // Desenhar beams se as notas foram beamadas
-    if (processedElements.whereType<Note>().isNotEmpty &&
-        processedElements.whereType<Note>().first.beam != null) {
+    if (willDrawBeams) {
       _drawSimpleBeams(
         canvas,
         notePositions,
@@ -119,8 +150,12 @@ class TupletRenderer {
 
     // ✅ CORREÇÃO P9: Determinar direção da haste (Behind Bars standard)
     final staffCenterY = coordinates.staffBaseline.dy;
-    final averageY = notePositions.map((p) => p.dy).reduce((a, b) => a + b) / notePositions.length;
-    final stemUp = averageY > staffCenterY; // Se média está abaixo do centro, haste vai para cima
+    final averageY =
+        notePositions.map((p) => p.dy).reduce((a, b) => a + b) /
+        notePositions.length;
+    final stemUp =
+        averageY >
+        staffCenterY; // Se média está abaixo do centro, haste vai para cima
 
     // ✅ CORREÇÃO P9: Encontrar nota extrema baseada na direção da haste
     double extremeY;
@@ -142,7 +177,8 @@ class TupletRenderer {
 
     // Bracket adapts to stem direction
     final bracketY = stemUp
-        ? extremeY - bracketOffset  // Above for stems up
+        ? extremeY -
+              bracketOffset // Above for stems up
         : extremeY + bracketOffset; // Below for stems down
 
     // Espessura do bracket
@@ -205,7 +241,9 @@ class TupletRenderer {
 
     // ✅ CORREÇÃO P9: Determinar direção da haste (Behind Bars standard)
     final staffCenterY = coordinates.staffBaseline.dy;
-    final averageY = notePositions.map((p) => p.dy).reduce((a, b) => a + b) / notePositions.length;
+    final averageY =
+        notePositions.map((p) => p.dy).reduce((a, b) => a + b) /
+        notePositions.length;
     final stemUp = averageY > staffCenterY;
 
     // ✅ CORREÇÃO P9: Encontrar nota extrema baseada na direção da haste
@@ -232,8 +270,9 @@ class TupletRenderer {
     // Stems up: number ABOVE bracket (negative offset)
     // Stems down: number BELOW bracket (positive offset)
     final numberOffset = stemUp
-        ? -coordinates.staffSpace * 0.8  // Above
-        : coordinates.staffSpace * 0.8;  // Below
+        ? -coordinates.staffSpace *
+              0.8 // Above
+        : coordinates.staffSpace * 0.8; // Below
     final numberY = bracketY + numberOffset;
 
     final glyphName = 'tuplet$number';
@@ -319,17 +358,9 @@ class TupletRenderer {
   ) {
     if (notePositions.length < 2 || notes.length < 2) return;
 
-    print('\n🎵 BEAM RENDER START');
-    print('  Número de notas: ${notes.length}');
-    print('  Staff Space: ${coordinates.staffSpace.toStringAsFixed(2)}');
-
     // ✅ CORREÇÃO P8: Usar altura padrão SMuFL (3.5 SS, não 2.5 SS)
     final stemHeight = coordinates.staffSpace * 3.5;
-    final beamThickness =
-        coordinates.staffSpace * 0.5; // SMuFL spec: 0.5 SS
-
-    print('  Stem Height: ${stemHeight.toStringAsFixed(2)}');
-    print('  Beam Thickness: ${beamThickness.toStringAsFixed(2)}');
+    final beamThickness = coordinates.staffSpace * 0.4; // SMuFL spec: 0.5 SS
 
     // ✅ CORREÇÃO P8: Calcular centro baseado em baseline do sistema
     // O baseline está em staffSpace * 5.0 (vindo do layout)
@@ -341,54 +372,88 @@ class TupletRenderer {
         averageY >
         staffCenterY; // Se média está abaixo do centro, haste vai para cima
 
-    print('  Staff Center Y: ${staffCenterY.toStringAsFixed(2)}');
-    print('  Average Note Y: ${averageY.toStringAsFixed(2)}');
-    print('  Stem Direction: ${stemUp ? "UP ↑" : "DOWN ↓"}');
-
     final paint = Paint()
       ..color = theme.stemColor
       ..style = PaintingStyle.fill;
 
     // Calcular endpoints das hastes baseado na direção
+    // Para garantir que todas as hastes tenham altura mínima, precisamos:
+    // 1. Calcular inclinação natural (primeira → última nota)
+    // 2. Ajustar verticalmente para que a nota mais problemática tenha altura mínima
+
     final stemOffset = stemUp ? -stemHeight : stemHeight;
-    final firstStemTop = notePositions.first.dy + stemOffset;
-    final lastStemTop = notePositions.last.dy + stemOffset;
 
-    print('  ┌─ CÁLCULO INICIAL:');
-    print(
-      '  │  stemOffset: ${stemOffset.toStringAsFixed(2)} (${stemUp ? "-" : "+"}${stemHeight.toStringAsFixed(2)})',
-    );
-    print('  │  First Note Y: ${notePositions.first.dy.toStringAsFixed(2)}');
-    print(
-      '  │  First Stem Top: ${notePositions.first.dy.toStringAsFixed(2)} + ${stemOffset.toStringAsFixed(2)} = ${firstStemTop.toStringAsFixed(2)}',
-    );
-    print('  │  Last Note Y: ${notePositions.last.dy.toStringAsFixed(2)}');
-    print(
-      '  │  Last Stem Top: ${notePositions.last.dy.toStringAsFixed(2)} + ${stemOffset.toStringAsFixed(2)} = ${lastStemTop.toStringAsFixed(2)}',
-    );
+    // Calcular beam inicial com inclinação natural
+    double firstStemTop = notePositions.first.dy + stemOffset;
+    double lastStemTop = notePositions.last.dy + stemOffset;
 
-    print('\n  ┌─ POSIÇÕES DAS NOTAS:');
+    // ✅ CORREÇÃO: Calcular posições X corretas das hastes usando âncoras SMuFL
+    // ANTES de desenhar as beams para garantir alinhamento correto
+    final stemXPositions = <double>[];
     for (int i = 0; i < notePositions.length; i++) {
-      print(
-        '  │  Nota ${i + 1}: (${notePositions[i].dx.toStringAsFixed(2)}, ${notePositions[i].dy.toStringAsFixed(2)}) - ${notes[i].pitch.step}${notes[i].pitch.octave}',
-      );
-    }
-    print('  │  First Stem Top: ${firstStemTop.toStringAsFixed(2)}');
-    print('  │  Last Stem Top: ${lastStemTop.toStringAsFixed(2)}');
+      final noteX = notePositions[i].dx;
+      final note = notes[i];
+      final noteheadGlyph = note.duration.type.glyphName;
 
-    // Calcular slope do beam (ligeira inclinação se houver diferença de altura)
+      // Obter âncora SMuFL
+      final stemAnchor = stemUp
+          ? metadata
+                    .getGlyphInfo(noteheadGlyph)
+                    ?.anchors
+                    ?.getAnchor('stemUpSE') ??
+                const Offset(1.18, 0.0)
+          : metadata
+                    .getGlyphInfo(noteheadGlyph)
+                    ?.anchors
+                    ?.getAnchor('stemDownNW') ??
+                const Offset(0.0, 0.0);
+
+      final stemX =
+          noteX +
+          (stemAnchor.dx * coordinates.staffSpace -
+              0.5); //Ajuste empírico de posição das hastes com magic numbers.
+      stemXPositions.add(stemX);
+    }
+
+    // Calcular slope inicial do beam
     final beamSlope =
         (lastStemTop - firstStemTop) /
-        (notePositions.last.dx - notePositions.first.dx);
+        (stemXPositions.last - stemXPositions.first);
 
-    print('  └─ Beam Slope: ${beamSlope.toStringAsFixed(4)}');
-    print(
-      '  └─ Beam Slope Formula: beamY = ${firstStemTop.toStringAsFixed(2)} + (${beamSlope.toStringAsFixed(4)} * (x - ${notePositions.first.dx.toStringAsFixed(2)}))',
-    );
+    // Verificar se todas as hastes têm altura mínima e ajustar beam se necessário
+    double maxAdjustment = 0.0;
+    for (int i = 0; i < notePositions.length; i++) {
+      final noteY = notePositions[i].dy;
+      final stemX = stemXPositions[i];
+
+      // Calcular onde o beam estaria com a inclinação atual
+      final interpolatedBeamY = firstStemTop + (beamSlope * (stemX - stemXPositions.first));
+
+      // Calcular comprimento da haste atual
+      final currentStemLength = (interpolatedBeamY - noteY).abs();
+
+      // Se a haste é muito curta, calcular quanto precisamos ajustar
+      if (currentStemLength < stemHeight) {
+        final adjustment = stemHeight - currentStemLength;
+        if (adjustment > maxAdjustment) {
+          maxAdjustment = adjustment;
+        }
+      }
+    }
+
+    // Aplicar ajuste se necessário (mover beam para longe das notas)
+    if (maxAdjustment > 0) {
+      if (stemUp) {
+        firstStemTop -= maxAdjustment;
+        lastStemTop -= maxAdjustment;
+      } else {
+        firstStemTop += maxAdjustment;
+        lastStemTop += maxAdjustment;
+      }
+    }
 
     double getBeamY(double x) {
-      final result = firstStemTop + (beamSlope * (x - notePositions.first.dx));
-      // Não imprimir aqui para evitar spam - já temos logs nas hastes
+      final result = firstStemTop + (beamSlope * (x - stemXPositions.first));
       return result;
     }
 
@@ -402,34 +467,18 @@ class TupletRenderer {
       beamCount = 4;
     }
 
-    print('  Duração: ${notes.first.duration.type}');
-    print('  Número de beams: $beamCount');
-
     // Desenhar cada nível de beam
-    final beamSpacing = coordinates.staffSpace * 0.25;
-    print('\n  ┌─ BEAMS (${beamCount} níveis):');
-    print('  │  Beam Spacing: ${beamSpacing.toStringAsFixed(2)} (0.25 SS)');
+    final beamSpacing = coordinates.staffSpace * 0.60;
     for (int level = 0; level < beamCount; level++) {
       // Beams adicionais devem ir na direção oposta às notas
       final yOffset = stemUp ? (level * beamSpacing) : -(level * beamSpacing);
-      final startX = notePositions.first.dx;
-      final endX = notePositions.last.dx;
+      // ✅ CORREÇÃO: Usar posições corretas das hastes (com âncoras SMuFL)
+      final startX = stemXPositions.first;
+      final endX = stemXPositions.last;
       final baseStartY = getBeamY(startX);
       final baseEndY = getBeamY(endX);
       final startY = baseStartY + yOffset;
       final endY = baseEndY + yOffset;
-
-      print('  │  ═══ Beam ${level + 1} ═══');
-      print('  │    Level: ${level} (yOffset = ${yOffset.toStringAsFixed(2)})');
-      print('  │    Base Start Y: ${baseStartY.toStringAsFixed(2)}');
-      print('  │    Base End Y: ${baseEndY.toStringAsFixed(2)}');
-      print(
-        '  │    Final Start: (${startX.toStringAsFixed(2)}, ${startY.toStringAsFixed(2)})',
-      );
-      print(
-        '  │    Final End: (${endX.toStringAsFixed(2)}, ${endY.toStringAsFixed(2)})',
-      );
-      print('  │    Thickness: ${beamThickness.toStringAsFixed(2)}');
 
       // Desenhar beam como retângulo preenchido
       // Espessura na direção oposta às notas (se stem up, beam cresce para baixo)
@@ -444,35 +493,18 @@ class TupletRenderer {
       canvas.drawPath(path, paint);
     }
 
-    // Desenhar hastes
+    // Desenhar hastes usando as posições já calculadas
     final stemPaint = Paint()
       ..color = theme.stemColor
       ..strokeWidth = coordinates.staffSpace * 0.12;
 
-    print('\n  ┌─ HASTES (Detalhadas):');
     for (int i = 0; i < notePositions.length; i++) {
-      final stemX = notePositions[i].dx;
+      final stemX = stemXPositions[i]; // ✅ Usar posição já calculada com âncora
       final noteY = notePositions[i].dy;
       final beamY = getBeamY(stemX);
-      final stemLength = (beamY - noteY).abs();
-
-      print('  │  ═══ Haste ${i + 1} ═══');
-      print('  │  Nota: ${notes[i].pitch.step}${notes[i].pitch.octave}');
-      print('  │  X: ${stemX.toStringAsFixed(2)}');
-      print('  │  Note Y: ${noteY.toStringAsFixed(2)}');
-      print('  │  Beam Y (calculated): ${beamY.toStringAsFixed(2)}');
-      print(
-        '  │  Stem Length: ${stemLength.toStringAsFixed(2)} px (${(stemLength / coordinates.staffSpace).toStringAsFixed(2)} SS)',
-      );
-      print('  │  Direction: ${stemUp ? "UP ↑" : "DOWN ↓"}');
-      print(
-        '  │  From Y: ${noteY.toStringAsFixed(2)} → To Y: ${beamY.toStringAsFixed(2)}',
-      );
 
       canvas.drawLine(Offset(stemX, noteY), Offset(stemX, beamY), stemPaint);
     }
-
-    print('🎵 BEAM RENDER END\n');
   }
 
   /// Aplica beams automáticos às notas do tuplet se forem beamable

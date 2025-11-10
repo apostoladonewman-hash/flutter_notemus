@@ -109,6 +109,7 @@ class NoteRenderer extends BaseGlyphRenderer {
     Offset basePosition,
     Clef currentClef, {
     bool renderOnlyNotehead = false,
+    bool? forcedStemUp,
   }) {
     // MELHORIA: Usar StaffPositionCalculator unificado
     final staffPosition = StaffPositionCalculator.calculate(note.pitch, currentClef);
@@ -173,7 +174,8 @@ class NoteRenderer extends BaseGlyphRenderer {
     // APENAS se não for renderOnlyNotehead E não tiver beam
     if (!renderOnlyNotehead && note.duration.type != DurationType.whole && note.beam == null) {
       // POLYPHONIC: Determine stem direction based on voice (if specified) or default position
-      final stemUp = _getStemDirection(note, staffPosition);
+      // Allow forced stem direction (for tuplets, beams, etc.)
+      final stemUp = forcedStemUp ?? _getStemDirection(note, staffPosition);
       final beamCount = _getBeamCount(note.duration.type);
       
       final stemEnd = stemRenderer.render(
