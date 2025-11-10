@@ -18,6 +18,10 @@ class Chord extends MusicalElement with BoundingBoxSupport {
   final List<Ornament> ornaments;
   final Dynamic? dynamic;
 
+  /// Número da voz para notação polifônica (1 = soprano, 2 = contralto, etc.)
+  /// null = voz única (padrão)
+  final int? voice;
+
   Chord({
     required this.notes,
     required this.duration,
@@ -27,6 +31,7 @@ class Chord extends MusicalElement with BoundingBoxSupport {
     this.beam,
     this.ornaments = const [],
     this.dynamic,
+    this.voice,
   });
 
   Note get highestNote {

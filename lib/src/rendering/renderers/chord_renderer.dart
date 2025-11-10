@@ -44,6 +44,13 @@ class ChordRenderer extends BaseGlyphRenderer {
     Offset basePosition,
     Clef currentClef,
   ) {
+    // POLYPHONIC: Apply voice-based horizontal offset
+    final voiceOffset = _getVoiceHorizontalOffset(chord);
+    final adjustedBasePosition = Offset(
+      basePosition.dx + voiceOffset,
+      basePosition.dy,
+    );
+
     // MELHORIA: Usar StaffPositionCalculator unificado
     final sortedNotes = [...chord.notes]
       ..sort(
@@ -57,10 +64,8 @@ class ChordRenderer extends BaseGlyphRenderer {
         .map((n) => StaffPositionCalculator.calculate(n.pitch, currentClef))
         .toList();
 
-    final mostExtremePos = positions.reduce(
-      (a, b) => a.abs() > b.abs() ? a : b,
-    );
-    final stemUp = mostExtremePos > 0;
+    // POLYPHONIC: Determine stem direction based on voice or position
+    final stemUp = _getStemDirection(chord, positions);
 
     final Map<int, double> xOffsets = {};
     // CORREÇÃO TIPOGRÁFICA: Usar largura real da cabeça de nota para offset
@@ -93,14 +98,14 @@ class ChordRenderer extends BaseGlyphRenderer {
       final xOffset = xOffsets[i]!;
 
       // MELHORIA: Usar StaffPositionCalculator para ledger lines
-      _drawLedgerLines(canvas, basePosition.dx + xOffset, staffPos);
+      _drawLedgerLines(canvas, adjustedBasePosition.dx + xOffset, staffPos);
 
       if (note.pitch.accidentalGlyph != null) {
         // CORREÇÃO: Passar informações adicionais para escalonamento de acidentes
         _renderAccidental(
           canvas,
           note,
-          Offset(basePosition.dx + xOffset, noteY),
+          Offset(adjustedBasePosition.dx + xOffset, noteY),
           i,
           sortedNotes,
           positions,
@@ -111,20 +116,13 @@ class ChordRenderer extends BaseGlyphRenderer {
       drawGlyphWithBBox(
         canvas,
         glyphName: note.duration.type.glyphName,
-        position: Offset(basePosition.dx + xOffset, noteY),
+        position: Offset(adjustedBasePosition.dx + xOffset, noteY),
         color: theme.noteheadColor,
         options: GlyphDrawOptions.noteheadDefault,
       );
     }
 
     if (chord.duration.type != DurationType.whole) {
-      // 🆕 Determinar direção da haste baseado na nota média
-      final sortedPositions = sortedNotes.map((note) => 
-        StaffPositionCalculator.calculate(note.pitch, currentClef)
-      ).toList();
-      final avgPosition = sortedPositions.reduce((a, b) => a + b) / sortedPositions.length;
-      final stemUp = avgPosition <= 0;
-      
       // CORREÇÃO CRÍTICA: sortedNotes está em ordem DECRESCENTE de staffPosition
       // - sortedNotes.first = nota mais ALTA (maior staffPosition)
       // - sortedNotes.last = nota mais BAIXA (menor staffPosition)
@@ -153,15 +151,16 @@ class ChordRenderer extends BaseGlyphRenderer {
       final beamCount = _getBeamCount(chord.duration.type);
       
       // Calcular comprimento proporcional usando positioning engine
+      final sortedPositions = positions; // Already calculated earlier
       final customStemLength = noteRenderer.positioningEngine.calculateChordStemLength(
         noteStaffPositions: sortedPositions,
         stemUp: stemUp,
         beamCount: beamCount,
       );
-      
+
       final stemEnd = _renderChordStem(
         canvas,
-        Offset(basePosition.dx + stemXOffset, extremeY),
+        Offset(adjustedBasePosition.dx + stemXOffset, extremeY),
         noteheadGlyph,
         stemUp,
         customStemLength,
@@ -326,6 +325,53 @@ class ChordRenderer extends BaseGlyphRenderer {
 
     // Retornar posição do final da haste (para bandeirola)
     return Offset(stemX, stemEndY);
+  }
+
+  /// Get horizontal offset based on chord's voice
+  ///
+  /// Voice 1: no offset (0.0)
+  /// Voice 2: 0.6 staff spaces right
+  /// Voice 3+: incremental offset
+  double _getVoiceHorizontalOffset(Chord chord) {
+    if (chord.voice == null) return 0.0;
+
+    // Create Voice instance to get proper offset calculation
+    final voice = Voice(number: chord.voice!);
+    return voice.getHorizontalOffset(coordinates.staffSpace);
+  }
+
+  /// Determine stem direction based on voice or chord position
+  ///
+  /// If chord has voice specified, use voice-based direction:
+  /// - Voice 1: stems up
+  /// - Voice 2: stems down
+  /// - Voice 3+: stems up
+  ///
+  /// If no voice, use traditional rule based on most extreme position
+  bool _getStemDirection(Chord chord, List<int> positions) {
+    if (chord.voice == null) {
+      // Traditional rule: stems up if average position is on or below middle line
+      final mostExtremePos = positions.reduce(
+        (a, b) => a.abs() > b.abs() ? a : b,
+      );
+      return mostExtremePos > 0;
+    }
+
+    // Voice-based stem direction
+    final voice = Voice(number: chord.voice!);
+    final direction = voice.getStemDirection();
+
+    return switch (direction) {
+      StemDirection.up => true,
+      StemDirection.down => false,
+      StemDirection.auto => {
+        // Fall back to position-based
+        final mostExtremePos = positions.reduce(
+          (a, b) => a.abs() > b.abs() ? a : b,
+        );
+        mostExtremePos > 0
+      },
+    };
   }
 
 }
