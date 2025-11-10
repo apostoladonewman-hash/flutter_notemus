@@ -222,6 +222,12 @@ class StaffRenderer {
     Size size,
     {LayoutEngine? layoutEngine}
   ) {
+    // 🐛 DEBUG: Log de elementos
+    final chordCount = elements.where((e) => e.element is Chord).length;
+    print('\n📊 [STAFF RENDERER] renderStaff() iniciado:');
+    print('   Total de elementos: ${elements.length}');
+    print('   Acordes detectados: $chordCount');
+    
     // Limpar set de notas beamed
     _notesInAdvancedBeams.clear();
     
@@ -237,9 +243,11 @@ class StaffRenderer {
     currentClef = Clef(clefType: ClefType.treble); // Default clef
 
     // Primeira passagem: renderizar elementos individuais
+    print('   🔄 Iniciando renderização de elementos individuais...');
     for (final positioned in elements) {
       _renderElement(canvas, positioned);
     }
+    print('   ✅ Renderização de elementos individuais concluída!');
 
     // Segunda passagem: renderizar ADVANCED BEAMS (se disponível)
     if (layoutEngine != null && layoutEngine.advancedBeamGroups.isNotEmpty) {
@@ -395,6 +403,13 @@ class StaffRenderer {
     final element = positioned.element;
     final basePosition = positioned.position;
 
+    // 🐛 DEBUG: Log de todos os elementos
+    if (element is Chord) {
+      print('🎵 [STAFF RENDERER] Detectou CHORD! currentClef: ${currentClef != null ? "✅" : "❌"}');
+      print('   Número de notas no acorde: ${element.notes.length}');
+      print('   basePosition: $basePosition');
+    }
+
     if (element is Clef) {
       currentClef = element;
       barElementRenderer.renderClef(canvas, element, basePosition);
@@ -423,7 +438,9 @@ class StaffRenderer {
     } else if (element is Barline) {
       barlineRenderer.render(canvas, element, basePosition);
     } else if (element is Chord && currentClef != null) {
+      print('   ➡️ Chamando chordRenderer.render()...');
       chordRenderer.render(canvas, element, basePosition, currentClef!);
+      print('   ✅ chordRenderer.render() concluído!');
     } else if (element is Tuplet && currentClef != null) {
       tupletRenderer.render(canvas, element, basePosition, currentClef!);
     } else if (element is RepeatMark) {

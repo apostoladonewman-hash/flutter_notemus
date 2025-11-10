@@ -107,7 +107,7 @@ class RestRenderer extends BaseGlyphRenderer {
         duration: rest.duration,
         ornaments: rest.ornaments,
       );
-      ornamentRenderer.renderForNote(canvas, placeholderNote, restPosition, 0);
+      ornamentRenderer.renderForNote(canvas, placeholderNote, restPosition, 0, null);
     }
   }
 }

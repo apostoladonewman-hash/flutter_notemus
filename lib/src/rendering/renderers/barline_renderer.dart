@@ -27,6 +27,10 @@ class BarlineRenderer {
 
   // Ajuste X offset (em staff spaces) - positivo = direita, negativo = esquerda
   static const double barlineXOffset = 0.0; // Padrão: sem offset
+  
+  // Ajustes X específicos para barras de repetição
+  static const double repeatForwardXOffset = 0.0; // repeatLeft (:||) - sem ajuste
+  static const double repeatBackwardXOffset = -1.2; // repeatRight (||:) - mover para esquerda
   final StaffCoordinateSystem coordinates;
   final SmuflMetadata metadata;
   final MusicScoreTheme theme;
@@ -50,12 +54,33 @@ class BarlineRenderer {
     final topY =
         coordinates.getStaffLineY(1) +
         (barlineYOffset * coordinates.staffSpace);
-    final x = position.dx + (barlineXOffset * coordinates.staffSpace);
+    
+    // Usar offset X específico para cada tipo de barra
+    double xOffset;
+    if (barline.type == BarlineType.repeatForward || barline.type == BarlineType.repeatBoth) {
+      xOffset = repeatForwardXOffset;
+    } else if (barline.type == BarlineType.repeatBackward) {
+      xOffset = repeatBackwardXOffset;
+    } else {
+      xOffset = barlineXOffset;
+    }
+    final x = position.dx + (xOffset * coordinates.staffSpace);
 
     // Altura ajustável
     final barlineHeight = coordinates.staffSpace * barlineHeightMultiplier;
 
     final renderPosition = Offset(x, topY);
+    
+    // 🐛 DEBUG: Log para barras de repetição
+    if (barline.type == BarlineType.repeatForward || 
+        barline.type == BarlineType.repeatBackward || 
+        barline.type == BarlineType.repeatBoth) {
+      print('🔁 [BARLINE REPEAT] type=${barline.type}, glyph=$glyphName');
+      print('   Original position.dx: ${position.dx.toStringAsFixed(1)}');
+      print('   X offset applied: ${xOffset.toStringAsFixed(2)} SS = ${(xOffset * coordinates.staffSpace).toStringAsFixed(1)}px');
+      print('   Final X: ${x.toStringAsFixed(1)}');
+      print('   RenderPosition: $renderPosition');
+    }
 
     // Renderizar glyph SMuFL oficial da Bravura!
     glyphRenderer.drawGlyph(

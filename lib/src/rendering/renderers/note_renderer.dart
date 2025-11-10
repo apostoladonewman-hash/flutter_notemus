@@ -197,6 +197,7 @@ class NoteRenderer extends BaseGlyphRenderer {
       note,
       noteCenter,
       staffPosition,
+      currentClef, // ✅ Passar currentClef para renderizar grace notes
     );
 
     // Renderizar dinâmicas se presente

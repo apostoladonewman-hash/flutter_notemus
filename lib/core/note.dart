@@ -4,6 +4,7 @@ import 'musical_element.dart';
 import 'pitch.dart';
 import 'duration.dart';
 import 'ornament.dart';
+import 'grace_note.dart';
 import 'dynamic.dart';
 import 'technique.dart';
 import '../src/music_model/bounding_box_support.dart';
@@ -44,6 +45,9 @@ class Note extends MusicalElement with BoundingBoxSupport {
   /// Lista de ornamentos aplicados à nota
   final List<Ornament> ornaments;
 
+  /// Lista de grace notes (appoggiaturas/acciaccaturas) imediatamente antes da nota.
+  final List<GraceNote> graceNotes;
+
   /// Dinâmica específica da nota
   final Dynamic? dynamicElement;
 
@@ -62,6 +66,7 @@ class Note extends MusicalElement with BoundingBoxSupport {
     this.tie,
     this.slur,
     this.ornaments = const [],
+    this.graceNotes = const [],
     this.dynamicElement,
     this.techniques = const [],
     this.voice,

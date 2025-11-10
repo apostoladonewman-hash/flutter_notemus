@@ -509,9 +509,6 @@ class MeasureValidator {
 
   /// Imprime relatório completo de validação
   static void printValidationReport(List<MeasureValidationResult> results) {
-    print('\n╔═══════════════════════════════════════════════════════╗');
-    print('║     RELATÓRIO DE VALIDAÇÃO DE COMPASSOS              ║');
-    print('╚═══════════════════════════════════════════════════════╝\n');
 
     int validCount = 0;
     int invalidCount = 0;
@@ -523,17 +520,8 @@ class MeasureValidator {
         validCount++;
       } else {
         invalidCount++;
-        print('📊 COMPASSO ${i + 1}:');
-        print(result.getSummary());
       }
     }
 
-    print('\n╔═══════════════════════════════════════════════════════╗');
-    print('║ RESUMO FINAL                                          ║');
-    print('╠═══════════════════════════════════════════════════════╣');
-    print('║ Total de compassos: ${results.length.toString().padLeft(31)} ║');
-    print('║ Compassos válidos: ${validCount.toString().padLeft(32)} ║');
-    print('║ Compassos inválidos: ${invalidCount.toString().padLeft(30)} ║');
-    print('╚═══════════════════════════════════════════════════════╝\n');
   }
 }

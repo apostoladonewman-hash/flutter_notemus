@@ -113,36 +113,41 @@ class LayoutCursor {
       _currentClef = element;
     }
 
-    // ✅ SUPORTE A ACORDES: Expandir notas do acorde em elementos separados
+    // ✅ SUPORTE A ACORDES: Adicionar como elemento único
     if (element is Chord && _currentClef != null) {
+      // Calcular posições de todas as notas do acorde
+      final staffPositions = element.notes.map((note) => 
+        StaffPositionCalculator.calculate(note.pitch, _currentClef!)
+      ).toList();
+      
+      // Usar a posição da nota mais baixa (ou mais alta) como referência Y
+      // Isso é apenas para o posicionamento inicial, o ChordRenderer cuidará do resto
+      final avgStaffPosition = staffPositions.reduce((a, b) => a + b) / staffPositions.length;
+      final chordY = StaffPositionCalculator.toPixelY(
+        avgStaffPosition.round(),
+        staffSpace,
+        _currentY,
+      );
+      
+      // Registrar notas individuais para beaming (se necessário)
       for (final note in element.notes) {
-        // Calcular posição Y para cada nota do acorde
-        final staffPosition = StaffPositionCalculator.calculate(
-          note.pitch,
-          _currentClef!,
-        );
+        final staffPosition = StaffPositionCalculator.calculate(note.pitch, _currentClef!);
+        final noteY = StaffPositionCalculator.toPixelY(staffPosition, staffSpace, _currentY);
         
-        final noteY = StaffPositionCalculator.toPixelY(
-          staffPosition,
-          staffSpace,
-          _currentY,
-        );
-        
-        // Registrar nota para beaming
         noteXPositions?[note] = _currentX;
         noteStaffPositions?[note] = staffPosition;
         noteYPositions?[note] = noteY;
-        
-        // Adicionar cada nota do acorde como elemento separado (mesma pos X, Y diferente)
-        elements.add(
-          PositionedElement(
-            note,
-            Offset(_currentX, noteY),
-            system: _currentSystem,
-          ),
-        );
       }
-      return; // Não adicionar o Chord como elemento único
+      
+      // Adicionar o CHORD como elemento único
+      elements.add(
+        PositionedElement(
+          element, // ← O próprio Chord, NÃO as notas individuais!
+          Offset(_currentX, chordY),
+          system: _currentSystem,
+        ),
+      );
+      return; // Chord já foi adicionado
     }
     
     // Calcular posição Y específica para notas (baseado no pitch)

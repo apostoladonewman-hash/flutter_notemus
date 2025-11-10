@@ -182,14 +182,11 @@ class BeamingShowcase extends StatelessWidget {
 
   // EXEMPLO 1: Primary Beams (4 colcheias)
   Staff _createPrimaryBeamsExample() {
-    print('\n📊 CRIANDO EXEMPLO 1: Primary Beams');
     final staff = Staff();
     final measure = Measure(); // AUTO-BEAMING ativado
     
     measure.add(Clef(clefType: ClefType.treble));
     measure.add(TimeSignature(numerator: 4, denominator: 4));
-    print('   ✓ Adicionado: Clef + TimeSignature 4/4');
-    print('   ✓ AUTO-BEAMING ativo (BeamGrouper corrigido!)');
     
     // 4 colcheias ascendentes
     measure.add(Note(
@@ -208,27 +205,20 @@ class BeamingShowcase extends StatelessWidget {
       pitch: const Pitch(step: 'F', octave: 5),
       duration: const Duration(DurationType.eighth),
     ));
-    print('   ✓ Adicionado: 4 colcheias (eighth notes)');
     
     measure.add(Rest(duration: const Duration(DurationType.half)));
-    print('   ✓ Adicionado: Rest (half note)');
     
     staff.add(measure);
-    print('   ✓ Staff criado com ${staff.measures.length} compasso(s)');
-    print('   ✓ Total de elementos no compasso: ${measure.elements.length}');
     return staff;
   }
 
   // EXEMPLO 2: Secondary Beams (4 semicolcheias)
   Staff _createSecondaryBeamsExample() {
-    print('\n📊 CRIANDO EXEMPLO 2: Secondary Beams');
     final staff = Staff();
     final measure = Measure(); // AUTO-BEAMING ativado
     
     measure.add(Clef(clefType: ClefType.treble));
     measure.add(TimeSignature(numerator: 4, denominator: 4));
-    print('   ✓ Adicionado: Clef + TimeSignature 4/4');
-    print('   ✓ AUTO-BEAMING ativo (BeamGrouper corrigido!)');
     
     // 4 semicolcheias
     measure.add(Note(
@@ -247,63 +237,47 @@ class BeamingShowcase extends StatelessWidget {
       pitch: const Pitch(step: 'A', octave: 5),
       duration: const Duration(DurationType.sixteenth),
     ));
-    print('   ✓ Adicionado: 4 semicolcheias (sixteenth notes)');
     
     measure.add(Rest(duration: const Duration(DurationType.half)));
     measure.add(Rest(duration: const Duration(DurationType.quarter)));
-    print('   ✓ Adicionado: Rests (half + quarter)');
     
     staff.add(measure);
-    print('   ✓ Staff criado com ${staff.measures.length} compasso(s)');
-    print('   ✓ Total de elementos no compasso: ${measure.elements.length}');
     return staff;
   }
 
   // EXEMPLO 3: Broken Beams (ritmo pontuado)
   Staff _createBrokenBeamsExample() {
-    print('\n📊 CRIANDO EXEMPLO 3: Broken Beams (RITMO PONTUADO)');
     final staff = Staff();
     final measure = Measure(); // AUTO-BEAMING ativado
     
     measure.add(Clef(clefType: ClefType.treble));
     measure.add(TimeSignature(numerator: 4, denominator: 4));
-    print('   ✓ Adicionado: Clef + TimeSignature 4/4');
-    print('   ✓ AUTO-BEAMING ativo (BeamGrouper corrigido!)');
     
     // Colcheia pontuada + semicolcheia (broken beam)
     measure.add(Note(
       pitch: const Pitch(step: 'G', octave: 5),
       duration: const Duration(DurationType.eighth, dots: 1),
     ));
-    print('   ✓ Adicionado: Colcheia PONTUADA (eighth note with dot)');
     
     measure.add(Note(
       pitch: const Pitch(step: 'A', octave: 5),
       duration: const Duration(DurationType.sixteenth),
     ));
-    print('   ✓ Adicionado: Semicolcheia (sixteenth note)');
-    print('   ⚠️  ESPERADO: Broken beam entre estas 2 notas!');
     
     measure.add(Rest(duration: const Duration(DurationType.half)));
     measure.add(Rest(duration: const Duration(DurationType.eighth)));
-    print('   ✓ Adicionado: Rests (half + eighth)');
     
     staff.add(measure);
-    print('   ✓ Staff criado com ${staff.measures.length} compasso(s)');
-    print('   ✓ Total de elementos no compasso: ${measure.elements.length}');
     return staff;
   }
 
   // EXEMPLO 4: Tertiary Beams (8 fusas)
   Staff _createTertiaryBeamsExample() {
-    print('\n📊 CRIANDO EXEMPLO 4: Tertiary Beams');
     final staff = Staff();
     final measure = Measure(); // AUTO-BEAMING ativado
     
     measure.add(Clef(clefType: ClefType.treble));
     measure.add(TimeSignature(numerator: 4, denominator: 4));
-    print('   ✓ Adicionado: Clef + TimeSignature 4/4');
-    print('   ✓ AUTO-BEAMING ativo (BeamGrouper corrigido!)');
     
     // 8 fusas (32nd notes)
     measure.add(Note(
@@ -340,24 +314,18 @@ class BeamingShowcase extends StatelessWidget {
     ));
     measure.add(Rest(duration: const Duration(DurationType.half)));
     measure.add(Rest(duration: const Duration(DurationType.quarter)));
-    print('   ✓ Adicionado: 8 fusas (32nd notes)');
     
     staff.add(measure);
-    print('   ✓ Staff criado com ${staff.measures.length} compasso(s)');
-    print('   ✓ Total de elementos no compasso: ${measure.elements.length}');
     return staff;
   }
 
   // EXEMPLO 5: Padrões Complexos
   Staff _createComplexBeamsExample() {
-    print('\n📊 CRIANDO EXEMPLO 5: Padrões Complexos');
     final staff = Staff();
     final measure = Measure(); // AUTO-BEAMING ativado
     
     measure.add(Clef(clefType: ClefType.treble));
     measure.add(TimeSignature(numerator: 4, denominator: 4));
-    print('   ✓ Adicionado: Clef + TimeSignature 4/4');
-    print('   ✓ AUTO-BEAMING ativo (BeamGrouper corrigido!)');
     
     // 2 colcheias
     measure.add(Note(
@@ -396,12 +364,8 @@ class BeamingShowcase extends StatelessWidget {
       pitch: const Pitch(step: 'B', octave: 4),
       duration: const Duration(DurationType.sixteenth),
     ));
-    print('   ✓ Adicionado: Mix de durações (2 eighth + 4 sixteenth + dotted eighth + sixteenth)');
     
     staff.add(measure);
-    print('   ✓ Staff criado com ${staff.measures.length} compasso(s)');
-    print('   ✓ Total de elementos no compasso: ${measure.elements.length}');
-    print('\n' + '='*60);
     return staff;
   }
 }

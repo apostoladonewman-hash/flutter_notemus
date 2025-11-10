@@ -19,6 +19,7 @@ export 'staff.dart';
 export 'note.dart';
 export 'rest.dart';
 export 'chord.dart';
+export 'grace_note.dart';
 
 // === AGRUPAMENTOS ===
 export 'tuplet.dart';

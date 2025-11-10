@@ -57,26 +57,34 @@ class ChordRenderer extends BaseGlyphRenderer {
         .map((n) => StaffPositionCalculator.calculate(n.pitch, currentClef))
         .toList();
 
-    final mostExtremePos = positions.reduce(
-      (a, b) => a.abs() > b.abs() ? a : b,
-    );
-    final stemUp = mostExtremePos > 0;
-
-    final Map<int, double> xOffsets = {};
-    // CORREÇÃO TIPOGRÁFICA: Usar largura real da cabeça de nota para offset
-    final noteheadInfo = metadata.getGlyphInfo('noteheadBlack');
-    final noteWidth = noteheadInfo?.boundingBox?.width ?? 1.18;
-
+    // 🎵 LOG: Informações do acorde
+    print('\n🎼 [CHORD RENDERER] Renderizando acorde:');
+    print('   📍 Base position: $basePosition');
+    print('   🎵 Número de notas: ${sortedNotes.length}');
     for (int i = 0; i < sortedNotes.length; i++) {
-      xOffsets[i] = 0.0;
-      if (i > 0 && (positions[i - 1] - positions[i]).abs() <= 1) {
-        if (xOffsets[i - 1] == 0.0) {
-          // Offset baseado na largura real da nota do metadata SMuFL
-          xOffsets[i] = !stemUp
-              ? -(noteWidth * coordinates.staffSpace)
-              : (noteWidth * coordinates.staffSpace);
-        }
-      }
+      final note = sortedNotes[i];
+      print('      Nota [$i]: ${note.pitch.step}${note.pitch.octave} → staffPos=${positions[i]}');
+    }
+
+    // CORREÇÃO: Direção da haste baseada na nota média (padrão Behind Bars)
+    final avgPosition = positions.reduce((a, b) => a + b) / positions.length;
+    final stemUp = avgPosition <= 0;
+    print('   📊 Média de posições: ${avgPosition.toStringAsFixed(2)}');
+    print('   ⬆️ Direção da haste: ${stemUp ? "UP" : "DOWN"}');
+
+    // ALGORITMO PROFISSIONAL: Deslocamento horizontal de cabeças de notas em acordes
+    // Baseado em Behind Bars (Elaine Gould, p. 14-15)
+    final Map<int, double> xOffsets = _calculateNoteheadOffsets(
+      positions: positions,
+      stemUp: stemUp,
+    );
+    
+    // 🎵 LOG: Offsets calculados
+    print('   📐 Offsets horizontais calculados:');
+    for (int i = 0; i < sortedNotes.length; i++) {
+      final offsetSS = xOffsets[i]!;
+      final offsetPx = offsetSS * coordinates.staffSpace;
+      print('      Nota [$i] ${sortedNotes[i].pitch.step}${sortedNotes[i].pitch.octave}: offset=${offsetSS.toStringAsFixed(2)} SS (${offsetPx.toStringAsFixed(1)}px)');
     }
 
     for (int i = 0; i < sortedNotes.length; i++) {
@@ -90,17 +98,19 @@ class ChordRenderer extends BaseGlyphRenderer {
         coordinates.staffBaseline.dy,
       );
 
-      final xOffset = xOffsets[i]!;
+      // CORREÇÃO CRÍTICA: xOffset está em STAFF SPACES, converter para PIXELS!
+      final xOffsetSS = xOffsets[i]!;
+      final xOffsetPx = xOffsetSS * coordinates.staffSpace;
 
       // MELHORIA: Usar StaffPositionCalculator para ledger lines
-      _drawLedgerLines(canvas, basePosition.dx + xOffset, staffPos);
+      _drawLedgerLines(canvas, basePosition.dx + xOffsetPx, staffPos);
 
       if (note.pitch.accidentalGlyph != null) {
         // CORREÇÃO: Passar informações adicionais para escalonamento de acidentes
         _renderAccidental(
           canvas,
           note,
-          Offset(basePosition.dx + xOffset, noteY),
+          Offset(basePosition.dx + xOffsetPx, noteY),
           i,
           sortedNotes,
           positions,
@@ -111,27 +121,41 @@ class ChordRenderer extends BaseGlyphRenderer {
       drawGlyphWithBBox(
         canvas,
         glyphName: note.duration.type.glyphName,
-        position: Offset(basePosition.dx + xOffset, noteY),
+        position: Offset(basePosition.dx + xOffsetPx, noteY),
         color: theme.noteheadColor,
         options: GlyphDrawOptions.noteheadDefault,
       );
     }
 
     if (chord.duration.type != DurationType.whole) {
-      // 🆕 Determinar direção da haste baseado na nota média
-      final sortedPositions = sortedNotes.map((note) => 
-        StaffPositionCalculator.calculate(note.pitch, currentClef)
-      ).toList();
-      final avgPosition = sortedPositions.reduce((a, b) => a + b) / sortedPositions.length;
-      final stemUp = avgPosition <= 0;
+      // CORREÇÃO CRÍTICA: Escolher a nota mais extrema QUE TENHA OFFSET = 0
+      // Em clusters com segundas adjacentes, a nota mais extrema pode estar deslocada!
+      // A haste deve sair de uma nota com offset = 0
       
-      // CORREÇÃO CRÍTICA: sortedNotes está em ordem DECRESCENTE de staffPosition
-      // - sortedNotes.first = nota mais ALTA (maior staffPosition)
-      // - sortedNotes.last = nota mais BAIXA (menor staffPosition)
-      // 
-      // Haste para CIMA: deve começar na nota mais BAIXA
-      // Haste para BAIXO: deve começar na nota mais ALTA
-      final extremeNote = stemUp ? sortedNotes.last : sortedNotes.first;
+      int extremeIndex;
+      if (stemUp) {
+        // HASTE PARA CIMA: procurar a nota mais BAIXA com offset = 0
+        // Começar do final (notas mais baixas) e procurar a primeira com offset 0
+        extremeIndex = sortedNotes.length - 1;
+        for (int i = sortedNotes.length - 1; i >= 0; i--) {
+          if (xOffsets[i]! == 0.0) {
+            extremeIndex = i;
+            break;
+          }
+        }
+      } else {
+        // HASTE PARA BAIXO: procurar a nota mais ALTA com offset = 0
+        // Começar do início (notas mais altas) e procurar a primeira com offset 0
+        extremeIndex = 0;
+        for (int i = 0; i < sortedNotes.length; i++) {
+          if (xOffsets[i]! == 0.0) {
+            extremeIndex = i;
+            break;
+          }
+        }
+      }
+      
+      final extremeNote = sortedNotes[extremeIndex];
 
       // MELHORIA: Usar StaffPositionCalculator
       final extremePos = StaffPositionCalculator.calculate(
@@ -143,9 +167,17 @@ class ChordRenderer extends BaseGlyphRenderer {
         coordinates.staffSpace,
         coordinates.staffBaseline.dy,
       );
-
-      final extremeNoteIndex = sortedNotes.indexOf(extremeNote);
-      final stemXOffset = xOffsets[extremeNoteIndex]!;
+      
+      // 🎵 LOG: Nota extrema para a haste
+      print('   🎯 Nota extrema para haste (com offset=0): ${extremeNote.pitch.step}${extremeNote.pitch.octave} (índice $extremeIndex)');
+      print('      staffPos=$extremePos, Y=${extremeY.toStringAsFixed(1)}px');
+      print('      xOffset desta nota: ${xOffsets[extremeIndex]!.toStringAsFixed(2)} SS');
+      
+      // CORREÇÃO CRÍTICA: A haste sempre sai da nota com offset = 0
+      // Converter offset de staff spaces para pixels
+      final stemXOffsetSS = xOffsets[extremeIndex]!;
+      final stemXOffsetPx = stemXOffsetSS * coordinates.staffSpace;
+      print('   🎚️ Stem X offset usado: ${stemXOffsetSS.toStringAsFixed(2)} SS (${stemXOffsetPx.toStringAsFixed(1)}px)');
 
       // 🎯 CORREÇÃO CRÍTICA: Usar calculateChordStemLength do positioning engine
       // A haste deve atravessar TODAS as notas do acorde!
@@ -154,18 +186,23 @@ class ChordRenderer extends BaseGlyphRenderer {
       
       // Calcular comprimento proporcional usando positioning engine
       final customStemLength = noteRenderer.positioningEngine.calculateChordStemLength(
-        noteStaffPositions: sortedPositions,
+        noteStaffPositions: positions,
         stemUp: stemUp,
         beamCount: beamCount,
       );
       
+      print('   📏 Comprimento da haste: ${customStemLength.toStringAsFixed(2)} SS');
+      print('   📍 Posição inicial da haste: (${(basePosition.dx + stemXOffsetPx).toStringAsFixed(1)}, $extremeY)');
+      
       final stemEnd = _renderChordStem(
         canvas,
-        Offset(basePosition.dx + stemXOffset, extremeY),
+        Offset(basePosition.dx + stemXOffsetPx, extremeY),
         noteheadGlyph,
         stemUp,
         customStemLength,
       );
+      
+      print('   📍 Posição final da haste: $stemEnd');
       
       // Desenhar bandeirola se necessário
       if (chord.duration.type.value < 0.25) {
@@ -177,6 +214,97 @@ class ChordRenderer extends BaseGlyphRenderer {
         );
       }
     }
+  }
+
+  /// Calcula deslocamentos horizontais das cabeças de notas em acordes
+  /// 
+  /// REGRAS (Behind Bars, p. 14-15):
+  /// 
+  /// **Haste para CIMA (stemUp = true):**
+  /// - Notas separadas (intervalo > 2ª): todas com offset 0 (alinhadas na haste)
+  /// - Cluster de segundas adjacentes: ALTERNAR começando pela nota mais BAIXA à ESQUERDA
+  ///   - Exemplo: C4-D4-E4 → D à esquerda, C e E na haste (0)
+  /// 
+  /// **Haste para BAIXO (stemUp = false):**
+  /// - Notas separadas (intervalo > 2ª): todas com offset 0 (alinhadas na haste)
+  /// - Cluster de segundas adjacentes: ALTERNAR começando pela nota mais ALTA à DIREITA
+  ///   - Exemplo: C4-D4-E4 → E à direita, C e D na haste (0)
+  /// 
+  /// @param positions - Posições das notas (ordem DECRESCENTE: primeira = mais alta)
+  /// @param stemUp - Direção da haste
+  /// @return Map de índices para offsets em staff spaces
+  Map<int, double> _calculateNoteheadOffsets({
+    required List<int> positions,
+    required bool stemUp,
+  }) {
+    final Map<int, double> offsets = {};
+    
+    // Largura da cabeça de nota do metadata SMuFL
+    final noteheadInfo = metadata.getGlyphInfo('noteheadBlack');
+    final noteWidth = noteheadInfo?.boundingBox?.width ?? 1.18;
+    
+    // Inicializar todos com offset 0
+    for (int i = 0; i < positions.length; i++) {
+      offsets[i] = 0.0;
+    }
+    
+    // Se apenas uma nota, sem offset
+    if (positions.length == 1) return offsets;
+    
+    // Identificar clusters de notas adjacentes (segundas)
+    final Set<int> processedIndices = {};
+    
+    for (int i = 0; i < positions.length - 1; i++) {
+      // Pular se já foi processada
+      if (processedIndices.contains(i)) continue;
+      
+      final currentPos = positions[i];
+      final nextPos = positions[i + 1];
+      final interval = (currentPos - nextPos).abs();
+      
+      // Encontrou um par adjacente (segunda)
+      if (interval <= 1) {
+        // Identificar todo o cluster de notas adjacentes
+        final List<int> clusterIndices = [i, i + 1];
+        int j = i + 1;
+        
+        // Expandir o cluster enquanto houver notas adjacentes
+        while (j + 1 < positions.length) {
+          final currentClusterPos = positions[j];
+          final nextClusterPos = positions[j + 1];
+          if ((currentClusterPos - nextClusterPos).abs() <= 1) {
+            clusterIndices.add(j + 1);
+            j++;
+          } else {
+            break;
+          }
+        }
+        
+        // Aplicar offsets alternados no cluster
+        // REGRA PROFISSIONAL (Behind Bars): Em um cluster de notas adjacentes,
+        // deslocar SEMPRE as notas mais BAIXAS de cada par adjacente
+        // Exemplo: E-D-C (stem DOWN) → deslocar D (índice 1)
+        // Exemplo: F-E-D-C (stem DOWN) → deslocar E e C (índices 1, 3)
+        if (stemUp) {
+          // HASTE PARA CIMA: Deslocar para a ESQUERDA (-noteWidth)
+          // Notas em posições ÍMPARES (1, 3, 5...) = notas mais BAIXAS de cada par
+          for (int k = 1; k < clusterIndices.length; k += 2) {
+            offsets[clusterIndices[k]] = -noteWidth;
+          }
+        } else {
+          // HASTE PARA BAIXO: Deslocar para a DIREITA (+noteWidth)
+          // Notas em posições ÍMPARES (1, 3, 5...) = notas mais BAIXAS de cada par
+          for (int k = 1; k < clusterIndices.length; k += 2) {
+            offsets[clusterIndices[k]] = noteWidth;
+          }
+        }
+        
+        // Marcar todas as notas do cluster como processadas
+        processedIndices.addAll(clusterIndices);
+      }
+    }
+    
+    return offsets;
   }
 
   /// Método auxiliar: calcular número de barras
@@ -293,25 +421,41 @@ class ChordRenderer extends BaseGlyphRenderer {
     bool stemUp,
     double customLength,
   ) {
+    print('   🎼 [_renderChordStem] Renderizando haste do acorde:');
+    print('      notePosition: $notePosition');
+    print('      noteheadGlyph: $noteheadGlyph');
+    print('      stemUp: $stemUp');
+    print('      customLength: ${customLength.toStringAsFixed(2)} SS');
+    
     // Obter âncora SMuFL da cabeça de nota
     final stemAnchor = stemUp
         ? noteRenderer.positioningEngine.getStemUpAnchor(noteheadGlyph)
         : noteRenderer.positioningEngine.getStemDownAnchor(noteheadGlyph);
 
+    print('      stemAnchor SMuFL: (${stemAnchor.dx.toStringAsFixed(3)}, ${stemAnchor.dy.toStringAsFixed(3)}) SS');
+    
     // Converter âncora de staff spaces para pixels
     final stemAnchorPixels = Offset(
       stemAnchor.dx * coordinates.staffSpace,
       -stemAnchor.dy * coordinates.staffSpace, // INVERTER Y!
     );
 
+    print('      stemAnchorPixels: (${stemAnchorPixels.dx.toStringAsFixed(1)}, ${stemAnchorPixels.dy.toStringAsFixed(1)}) px');
+    
     // Posição inicial da haste
     final stemX = notePosition.dx + stemAnchorPixels.dx;
     final stemStartY = notePosition.dy + stemAnchorPixels.dy;
 
+    print('      stemX: ${stemX.toStringAsFixed(1)}');
+    print('      stemStartY: ${stemStartY.toStringAsFixed(1)}');
+    
     // Usar comprimento customizado (em staff spaces)
     final stemLength = customLength * coordinates.staffSpace;
     final stemEndY = stemUp ? stemStartY - stemLength : stemStartY + stemLength;
 
+    print('      stemLength: ${stemLength.toStringAsFixed(1)} px');
+    print('      stemEndY: ${stemEndY.toStringAsFixed(1)}');
+    
     // Desenhar haste
     final stemPaint = Paint()
       ..color = theme.stemColor
@@ -324,6 +468,8 @@ class ChordRenderer extends BaseGlyphRenderer {
       stemPaint,
     );
 
+    print('      ✅ Haste desenhada de (${stemX.toStringAsFixed(1)}, ${stemStartY.toStringAsFixed(1)}) até (${stemX.toStringAsFixed(1)}, ${stemEndY.toStringAsFixed(1)})');
+    
     // Retornar posição do final da haste (para bandeirola)
     return Offset(stemX, stemEndY);
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/core.dart'; // 🆕 Tipos do core
 import '../../theme/music_score_theme.dart';
 import 'base_glyph_renderer.dart';
+import '../staff_position_calculator.dart';
 
 class OrnamentRenderer extends BaseGlyphRenderer {
   final MusicScoreTheme theme;
@@ -23,6 +24,7 @@ class OrnamentRenderer extends BaseGlyphRenderer {
     Note note,
     Offset notePos,
     int staffPosition,
+    Clef? currentClef,
   ) {
     if (note.ornaments.isEmpty) return;
 
@@ -31,6 +33,12 @@ class OrnamentRenderer extends BaseGlyphRenderer {
 
       if (ornament.type == OrnamentType.arpeggio) {
         _renderArpeggio(canvas, notePos, notePos.dy, notePos.dy);
+        continue;
+      }
+      
+      // ✅ TRATAMENTO ESPECIAL: Grace notes (appoggiaturas e acciaccaturas)
+      if (_isGraceNote(ornament.type)) {
+        _renderGraceNote(canvas, note, ornament, notePos, staffPosition, currentClef);
         continue;
       }
 
@@ -224,9 +232,10 @@ class OrnamentRenderer extends BaseGlyphRenderer {
       OrnamentType.turnInverted: 'ornamentTurnInverted',
       OrnamentType.invertedTurn: 'ornamentTurnInverted',
       OrnamentType.turnSlash: 'ornamentTurnSlash',
-      OrnamentType.appoggiaturaUp: 'graceNoteAcciaccaturaStemUp',
-      OrnamentType.appoggiaturaDown: 'graceNoteAcciaccaturaStemDown',
-      OrnamentType.acciaccatura: 'graceNoteAcciaccaturaStemUp',
+      // ❌ REMOVIDO: Grace notes não usam mais este mapeamento
+      // OrnamentType.appoggiaturaUp: 'graceNoteAcciaccaturaStemUp',
+      // OrnamentType.appoggiaturaDown: 'graceNoteAcciaccaturaStemDown',
+      // OrnamentType.acciaccatura: 'graceNoteAcciaccaturaStemUp',
       OrnamentType.fermata: 'fermataAbove',
       OrnamentType.fermataBelow: 'fermataBelow',
       OrnamentType.fermataBelowInverted: 'fermataBelowInverted',
@@ -245,5 +254,139 @@ class OrnamentRenderer extends BaseGlyphRenderer {
       OrnamentType.grace: 'graceNoteAcciaccaturaStemUp',
     };
     return ornamentGlyphs[type];
+  }
+  
+  /// Verifica se o ornamento é uma grace note (appoggiatura ou acciaccatura)
+  bool _isGraceNote(OrnamentType type) {
+    return type == OrnamentType.appoggiaturaUp ||
+           type == OrnamentType.appoggiaturaDown ||
+           type == OrnamentType.acciaccatura;
+  }
+  
+  /// Renderiza grace note como uma nota pequena na posição correta do pentagrama
+  void _renderGraceNote(
+    Canvas canvas,
+    Note mainNote,
+    Ornament graceOrnament,
+    Offset mainNotePos,
+    int mainStaffPos,
+    Clef? currentClef,
+  ) {
+    if (currentClef == null) return;
+    
+    // ✅ Calcular pitch da grace note
+    // Se alternatePitch estiver definido, usar; senão, usar nota principal +/- 1 step
+    final Pitch gracePitch;
+    if (graceOrnament.alternatePitch != null) {
+      gracePitch = graceOrnament.alternatePitch!;
+    } else {
+      // Default: nota um step acima ou abaixo
+      final steps = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+      final currentIndex = steps.indexOf(mainNote.pitch.step);
+      
+      String graceStep;
+      int graceOctave = mainNote.pitch.octave;
+      
+      if (graceOrnament.type == OrnamentType.appoggiaturaDown) {
+        // Um step abaixo
+        if (currentIndex > 0) {
+          graceStep = steps[currentIndex - 1];
+        } else {
+          graceStep = 'B';
+          graceOctave--;
+        }
+      } else {
+        // Um step acima (appoggiaturaUp e acciaccatura)
+        if (currentIndex < steps.length - 1) {
+          graceStep = steps[currentIndex + 1];
+        } else {
+          graceStep = 'C';
+          graceOctave++;
+        }
+      }
+      
+      gracePitch = Pitch(step: graceStep, octave: graceOctave);
+    }
+    
+    // ✅ Calcular posição Y baseada no pitch da grace note
+    final graceStaffPos = StaffPositionCalculator.calculate(
+      gracePitch,
+      currentClef,
+    );
+    
+    final graceY = StaffPositionCalculator.toPixelY(
+      graceStaffPos,
+      coordinates.staffSpace,
+      coordinates.staffBaseline.dy,
+    );
+    
+    // ✅ Posição X: antes da nota principal (1.5 SS)
+    final graceX = mainNotePos.dx - (coordinates.staffSpace * 1.5);
+    
+    // ✅ Direção da haste (inversa da nota principal para clareza visual)
+    final stemUp = graceStaffPos <= 0;
+    
+    // ✅ Renderizar notehead pequeno (0.7x)
+    final graceNoteheadGlyph = 'noteheadBlack';
+    final graceNoteheadSize = glyphSize * 0.7;
+    final graceStaffSpace = coordinates.staffSpace * 0.7; // Proporcional ao tamanho
+    
+    drawGlyphWithBBox(
+      canvas,
+      glyphName: graceNoteheadGlyph,
+      position: Offset(graceX, graceY),
+      color: theme.noteheadColor,
+      options: GlyphDrawOptions.noteheadDefault.copyWith(
+        size: graceNoteheadSize,
+      ),
+    );
+    
+    // ✅ Renderizar haste pequena
+    // Calcular posição baseada no tamanho do notehead (1.18 SS de largura padrão)
+    final noteheadWidth = 1.18 * graceStaffSpace;
+    final stemHeight = coordinates.staffSpace * 2.5; // Menor que normal
+    final stemPaint = Paint()
+      ..color = theme.noteheadColor
+      ..strokeWidth = coordinates.staffSpace * 0.1;
+    
+    // StemUpSE: canto direito inferior, StemDownNW: canto esquerdo superior
+    final stemX = stemUp 
+        ? graceX + noteheadWidth * 0.95  // Direita
+        : graceX + noteheadWidth * 0.05; // Esquerda
+    final stemY1 = graceY;
+    final stemY2 = stemUp ? graceY - stemHeight : graceY + stemHeight;
+    
+    canvas.drawLine(Offset(stemX, stemY1), Offset(stemX, stemY2), stemPaint);
+    
+    // ✅ BANDEIROLA (flag) - appoggiaturas são colcheias pequenas!
+    final flagGlyph = stemUp ? 'flag8thUp' : 'flag8thDown';
+    drawGlyphWithBBox(
+      canvas,
+      glyphName: flagGlyph,
+      position: Offset(stemX, stemY2), // Na ponta da haste
+      color: theme.noteheadColor,
+      options: GlyphDrawOptions.noteheadDefault.copyWith(
+        size: graceNoteheadSize, // Proporcional ao tamanho da grace note
+      ),
+    );
+    
+    // ✅ Acciaccatura: adicionar slash através da haste
+    if (graceOrnament.type == OrnamentType.acciaccatura) {
+      final slashPaint = Paint()
+        ..color = theme.noteheadColor
+        ..strokeWidth = coordinates.staffSpace * 0.15;
+      
+      final slashY = stemUp ? graceY - stemHeight * 0.6 : graceY + stemHeight * 0.6;
+      canvas.drawLine(
+        Offset(stemX - coordinates.staffSpace * 0.25, slashY - coordinates.staffSpace * 0.25),
+        Offset(stemX + coordinates.staffSpace * 0.25, slashY + coordinates.staffSpace * 0.25),
+        slashPaint,
+      );
+    }
+    
+    print('🎼 [GRACE NOTE] type=${graceOrnament.type}');
+    print('   Main note: ${mainNote.pitch.step}${mainNote.pitch.octave} at Y=${mainNotePos.dy.toStringAsFixed(1)}');
+    print('   Grace note: ${gracePitch.step}${gracePitch.octave} at Y=${graceY.toStringAsFixed(1)}');
+    print('   Position: X=${graceX.toStringAsFixed(1)}, staffPos=$graceStaffPos, stemUp=$stemUp');
   }
 }
