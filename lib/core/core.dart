@@ -14,6 +14,8 @@ export 'key_signature.dart';
 export 'barline.dart';
 export 'measure.dart';
 export 'staff.dart';
+export 'staff_group.dart';  // ✅ NEW: Staff grouping with brackets/braces
+export 'score.dart';  // ✅ NEW: Complete score with multiple staff groups
 
 // === ELEMENTOS MELÓDICOS ===
 export 'note.dart';

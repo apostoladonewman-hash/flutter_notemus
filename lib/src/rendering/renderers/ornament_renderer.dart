@@ -54,6 +54,10 @@ class OrnamentRenderer extends BaseGlyphRenderer {
       );
       final ornamentX = _getOrnamentHorizontalPosition(note, notePos.dx);
 
+      // ✅ FIXED: Use correct size for grace notes (60% per SMuFL standard)
+      final isGraceNote = _isGraceNoteOrnament(ornament.type);
+      final ornamentSize = isGraceNote ? glyphSize * 0.6 : glyphSize * 0.85;
+
       drawGlyphAlignedToAnchor(
         canvas,
         glyphName: glyphName,
@@ -61,7 +65,7 @@ class OrnamentRenderer extends BaseGlyphRenderer {
         target: Offset(ornamentX, ornamentY),
         color: theme.ornamentColor ?? theme.noteheadColor,
         options: GlyphDrawOptions.ornamentDefault.copyWith(
-          size: glyphSize * 0.85,
+          size: ornamentSize,
         ),
       );
     }
@@ -93,6 +97,10 @@ class OrnamentRenderer extends BaseGlyphRenderer {
 
       final ornamentY = _calculateOrnamentY(highestY, true, highestPos);
 
+      // ✅ FIXED: Use correct size for grace notes (60% per SMuFL standard)
+      final isGraceNote = _isGraceNoteOrnament(ornament.type);
+      final ornamentSize = isGraceNote ? glyphSize * 0.6 : glyphSize * 0.9;
+
       drawGlyphAlignedToAnchor(
         canvas,
         glyphName: glyphName,
@@ -100,7 +108,7 @@ class OrnamentRenderer extends BaseGlyphRenderer {
         target: Offset(chordPos.dx, ornamentY),
         color: theme.ornamentColor ?? theme.noteheadColor,
         options: GlyphDrawOptions.ornamentDefault.copyWith(
-          size: glyphSize * 0.9,
+          size: ornamentSize,
         ),
       );
     }
@@ -232,10 +240,16 @@ class OrnamentRenderer extends BaseGlyphRenderer {
       OrnamentType.turnInverted: 'ornamentTurnInverted',
       OrnamentType.invertedTurn: 'ornamentTurnInverted',
       OrnamentType.turnSlash: 'ornamentTurnSlash',
+<<<<<<< HEAD
       // ❌ REMOVIDO: Grace notes não usam mais este mapeamento
       // OrnamentType.appoggiaturaUp: 'graceNoteAcciaccaturaStemUp',
       // OrnamentType.appoggiaturaDown: 'graceNoteAcciaccaturaStemDown',
       // OrnamentType.acciaccatura: 'graceNoteAcciaccaturaStemUp',
+=======
+      OrnamentType.appoggiaturaUp: 'graceNoteAppoggiaturaStemUp',  // ✅ FIXED: no slash for appoggiatura
+      OrnamentType.appoggiaturaDown: 'graceNoteAppoggiaturaStemDown',  // ✅ FIXED: no slash for appoggiatura
+      OrnamentType.acciaccatura: 'graceNoteAcciaccaturaStemUp',  // ✓ Correct: with slash for acciaccatura
+>>>>>>> c5448cc155ce3aa72ff3078dcd323b386b810a28
       OrnamentType.fermata: 'fermataAbove',
       OrnamentType.fermataBelow: 'fermataBelow',
       OrnamentType.fermataBelowInverted: 'fermataBelowInverted',
@@ -255,6 +269,7 @@ class OrnamentRenderer extends BaseGlyphRenderer {
     };
     return ornamentGlyphs[type];
   }
+<<<<<<< HEAD
   
   /// Verifica se o ornamento é uma grace note (appoggiatura ou acciaccatura)
   bool _isGraceNote(OrnamentType type) {
@@ -388,5 +403,15 @@ class OrnamentRenderer extends BaseGlyphRenderer {
     print('   Main note: ${mainNote.pitch.step}${mainNote.pitch.octave} at Y=${mainNotePos.dy.toStringAsFixed(1)}');
     print('   Grace note: ${gracePitch.step}${gracePitch.octave} at Y=${graceY.toStringAsFixed(1)}');
     print('   Position: X=${graceX.toStringAsFixed(1)}, staffPos=$graceStaffPos, stemUp=$stemUp');
+=======
+
+  /// Helper function to identify grace note ornaments
+  /// Grace notes should be rendered at 60% size per SMuFL standard
+  bool _isGraceNoteOrnament(OrnamentType type) {
+    return type == OrnamentType.appoggiaturaUp ||
+           type == OrnamentType.appoggiaturaDown ||
+           type == OrnamentType.acciaccatura ||
+           type == OrnamentType.grace;
+>>>>>>> c5448cc155ce3aa72ff3078dcd323b386b810a28
   }
 }
