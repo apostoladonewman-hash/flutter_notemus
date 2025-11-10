@@ -1,5 +1,7 @@
 // lib/core/tuplet_bracket.dart
 
+import 'note.dart';  // ✅ Import needed for Note type
+
 /// Lado do colchete de quiáltera
 enum BracketSide {
   /// Lado da haste (padrão)
@@ -44,16 +46,35 @@ class TupletBracket {
 
   /// Determina se o colchete deve ser mostrado com base nas notas
   ///
-  /// Regras:
+  /// Regras (Behind Bars standard):
   /// - NÃO mostrar se todas as notas estão beamed juntas
   /// - MOSTRAR se está do lado da cabeça (música vocal)
-  /// - MOSTRAR se notas não têm beams
+  /// - MOSTRAR se notas não têm beams ou há rests
+  /// - MOSTRAR se show=false (força esconder)
   bool shouldShow(List<dynamic> notes) {
     // Se está do lado da cabeça, sempre mostrar
     if (side == BracketSide.notehead) return true;
 
-    // Se há notas sem beam, mostrar colchete
-    // (Em uma implementação real, verificaria se todas têm beam)
-    return show;
+    // Se show=false, forçar esconder
+    if (!show) return false;
+
+    // ✅ CORREÇÃO P9: Verificar se todas as notas têm beam
+    // Se sim, esconder bracket (Behind Bars standard)
+    // Se não (rests, unbeamed notes), mostrar bracket
+
+    // Filtrar apenas Notes (ignorar rests)
+    final actualNotes = notes.whereType<Note>().toList();
+
+    // Se não há notas, ou há rests misturados, mostrar bracket
+    if (actualNotes.isEmpty || actualNotes.length < notes.length) {
+      return true;
+    }
+
+    // Verificar se TODAS as notas têm beam definido
+    final allNotesBeamed = actualNotes.every((note) => note.beam != null);
+
+    // Se todas têm beam, esconder bracket (apenas mostrar número)
+    // Se alguma não tem beam, mostrar bracket
+    return !allNotesBeamed;
   }
 }
