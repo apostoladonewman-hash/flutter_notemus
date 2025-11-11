@@ -1,5 +1,7 @@
 // example/lib/examples/simple_json_example.dart
 
+// ignore_for_file: implementation_imports, prefer_const_declarations, prefer_const_constructors
+
 import 'package:flutter/material.dart';
 import 'package:flutter_notemus/flutter_notemus.dart';
 import 'package:flutter_notemus/src/parsers/simple_json_parser.dart';
@@ -40,77 +42,77 @@ class SimpleJsonExample extends StatelessWidget {
     );
 
     return Column(
-        children: [
-          // 📋 Informações
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.blue[50],
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '🎵 Música criada a partir de JSON simplificado',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+      children: [
+        // 📋 Informações
+        Container(
+          padding: const EdgeInsets.all(16),
+          color: Colors.blue[50],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '🎵 Música criada a partir de JSON simplificado',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Compassos: ${staff.measures.length}',
-                  style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Compassos: ${staff.measures.length}',
+                style: const TextStyle(fontSize: 14),
+              ),
+              Text(
+                'Notas: 14',
+                style: const TextStyle(fontSize: 14),
+              ),
+              Text(
+                'Formato: {"note": "C4", "lyric": "Dó", "duration": "quarter"}',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                  color: Colors.grey[700],
                 ),
-                Text(
-                  'Notas: 14',
-                  style: const TextStyle(fontSize: 14),
-                ),
-                Text(
-                  'Formato: {"note": "C4", "lyric": "Dó", "duration": "quarter"}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontFamily: 'monospace',
-                    color: Colors.grey[700],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
+        ),
 
-          // 🎼 RENDERIZAÇÃO
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Center(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: Colors.grey[300]!),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        spreadRadius: 2,
-                        blurRadius: 5,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(24),
-                  child: MusicScore(
-                    staff: staff,
-                    theme: MusicScoreTheme(
-                      noteheadColor: Colors.black,
-                      stemColor: Colors.black,
-                      staffLineColor: Colors.black87,
-                      barlineColor: Colors.black,
+        // 🎼 RENDERIZAÇÃO
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withValues(alpha: 0.2),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: const Offset(0, 3),
                     ),
-                    staffSpace: 14.0,
+                  ],
+                ),
+                padding: const EdgeInsets.all(24),
+                child: MusicScore(
+                  staff: staff,
+                  theme: MusicScoreTheme(
+                    noteheadColor: Colors.black,
+                    stemColor: Colors.black,
+                    staffLineColor: Colors.black87,
+                    barlineColor: Colors.black,
                   ),
+                  staffSpace: 14.0,
                 ),
               ),
             ),
           ),
-        ],
-      );
+        ),
+      ],
+    );
   }
 }

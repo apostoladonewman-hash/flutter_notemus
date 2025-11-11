@@ -110,6 +110,7 @@ class TupletRenderer {
     }
 
     // Desenhar colchete se necessário
+    // ignore: deprecated_member_use_from_same_package
     if (tuplet.showBracket && notePositions.length >= 2) {
       _drawTupletBracket(
         canvas,
@@ -121,6 +122,7 @@ class TupletRenderer {
     }
 
     // Desenhar número
+    // ignore: deprecated_member_use_from_same_package
     if (tuplet.showNumber && notePositions.isNotEmpty) {
       _drawTupletNumber(
         canvas,
@@ -427,7 +429,8 @@ class TupletRenderer {
       final stemX = stemXPositions[i];
 
       // Calcular onde o beam estaria com a inclinação atual
-      final interpolatedBeamY = firstStemTop + (beamSlope * (stemX - stemXPositions.first));
+      final interpolatedBeamY =
+          firstStemTop + (beamSlope * (stemX - stemXPositions.first));
 
       // Calcular comprimento da haste atual
       final currentStemLength = (interpolatedBeamY - noteY).abs();

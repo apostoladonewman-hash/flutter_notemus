@@ -1,6 +1,8 @@
 // example/lib/examples/rests_showcase.dart
 // Showcase de TODAS as pausas em suas posições corretas segundo Behind Bars
 
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/material.dart';
 import 'package:flutter_notemus/flutter_notemus.dart';
 
@@ -76,8 +78,10 @@ class RestsShowcaseExample extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            _buildSpecItem('• Whole rest: hangs BELOW the 4th line (barra superior toca a linha)'),
-            _buildSpecItem('• Half rest: sits ON the 3rd line/center (barra inferior toca a linha)'),
+            _buildSpecItem(
+                '• Whole rest: hangs BELOW the 4th line (barra superior toca a linha)'),
+            _buildSpecItem(
+                '• Half rest: sits ON the 3rd line/center (barra inferior toca a linha)'),
             _buildSpecItem('• Quarter rest and smaller: centered on staff'),
             const SizedBox(height: 8),
             Text(
@@ -149,30 +153,30 @@ class RestsShowcaseExample extends StatelessWidget {
 
   Staff _createWholeRestStaff() {
     final staff = Staff();
-    
+
     final measure = Measure();
     // Whole rest
     measure.add(Rest(duration: const Duration(DurationType.whole)));
-    
+
     staff.add(measure);
     return staff;
   }
 
   Staff _createHalfRestStaff() {
     final staff = Staff();
-    
+
     final measure = Measure();
     // Two half rests
     measure.add(Rest(duration: const Duration(DurationType.half)));
     measure.add(Rest(duration: const Duration(DurationType.half)));
-    
+
     staff.add(measure);
     return staff;
   }
 
   Staff _createQuarterAndSmallerStaff() {
     final staff = Staff();
-    
+
     final measure1 = Measure();
     // Quarter rests
     measure1.add(Rest(duration: const Duration(DurationType.quarter)));
@@ -200,7 +204,7 @@ class RestsShowcaseExample extends StatelessWidget {
 
   Staff _createAllRestsStaff() {
     final staff = Staff();
-    
+
     final measure1 = Measure();
     // Whole rest (ocupa o compasso todo)
     measure1.add(Rest(duration: const Duration(DurationType.whole)));

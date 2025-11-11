@@ -1,6 +1,8 @@
 // lib/src/layout/measure_validator.dart
 // Sistema de validação rigorosa de compassos baseado em teoria musical
 
+// ignore_for_file: unused_local_variable
+
 import '../../core/core.dart';
 
 /// Resultado detalhado da validação de um compasso
@@ -30,42 +32,48 @@ class MeasureValidationResult {
   String getSummary() {
     final buffer = StringBuffer();
     buffer.writeln('═══════════════════════════════════════');
-    buffer.writeln('VALIDAÇÃO DE COMPASSO: ${isValid ? "✓ VÁLIDO" : "✗ INVÁLIDO"}');
+    buffer.writeln(
+      'VALIDAÇÃO DE COMPASSO: ${isValid ? "✓ VÁLIDO" : "✗ INVÁLIDO"}',
+    );
     buffer.writeln('Fórmula: $numerator/$denominator');
     buffer.writeln('Capacidade esperada: $expectedCapacity unidades');
     buffer.writeln('Duração atual: $actualDuration unidades');
-    
+
     if (!isValid) {
       if (actualDuration > expectedCapacity) {
-        buffer.writeln('⚠️ EXCESSO: +${difference.toStringAsFixed(4)} unidades');
+        buffer.writeln(
+          '⚠️ EXCESSO: +${difference.toStringAsFixed(4)} unidades',
+        );
         buffer.writeln('   Remova figuras ou use compasso maior.');
       } else {
-        buffer.writeln('⚠️ FALTA: -${difference.abs().toStringAsFixed(4)} unidades');
+        buffer.writeln(
+          '⚠️ FALTA: -${difference.abs().toStringAsFixed(4)} unidades',
+        );
         buffer.writeln('   Adicione pausas ou notas.');
       }
     }
-    
+
     if (elementBreakdown.isNotEmpty) {
       buffer.writeln('\nDetalhamento por elemento:');
       elementBreakdown.forEach((key, value) {
         buffer.writeln('  - $key: $value unidades');
       });
     }
-    
+
     if (warnings.isNotEmpty) {
       buffer.writeln('\nAvisos:');
       for (final warning in warnings) {
         buffer.writeln('  ⚠️ $warning');
       }
     }
-    
+
     if (errors.isNotEmpty) {
       buffer.writeln('\nErros:');
       for (final error in errors) {
         buffer.writeln('  ✗ $error');
       }
     }
-    
+
     buffer.writeln('═══════════════════════════════════════');
     return buffer.toString();
   }
@@ -83,7 +91,7 @@ class MeasureValidator {
   }) {
     // Encontrar time signature
     TimeSignature? timeSignature = _findTimeSignature(measure);
-    
+
     if (timeSignature == null) {
       return MeasureValidationResult(
         isValid: true,
@@ -112,23 +120,27 @@ class MeasureValidator {
       if (element is Note) {
         final duration = _calculateNoteDuration(element, warnings);
         actualDuration += duration;
-        elementBreakdown['Nota ${elementIndex + 1} (${element.duration.type.name})'] = duration;
+        elementBreakdown['Nota ${elementIndex + 1} (${element.duration.type.name})'] =
+            duration;
         elementIndex++;
       } else if (element is Rest) {
         final duration = _calculateRestDuration(element, warnings);
         actualDuration += duration;
-        elementBreakdown['Pausa ${elementIndex + 1} (${element.duration.type.name})'] = duration;
+        elementBreakdown['Pausa ${elementIndex + 1} (${element.duration.type.name})'] =
+            duration;
         elementIndex++;
       } else if (element is Chord) {
         final duration = _calculateChordDuration(element, warnings);
         actualDuration += duration;
-        elementBreakdown['Acorde ${elementIndex + 1} (${element.duration.type.name})'] = duration;
+        elementBreakdown['Acorde ${elementIndex + 1} (${element.duration.type.name})'] =
+            duration;
         elementIndex++;
       } else if (element is Tuplet) {
         // CRÍTICO: Validar notas DENTRO de tuplets!
         final tupletDuration = _calculateTupletDuration(element, warnings);
         actualDuration += tupletDuration;
-        elementBreakdown['Tuplet ${elementIndex + 1} (${element.actualNotes}:${element.normalNotes})'] = tupletDuration;
+        elementBreakdown['Tuplet ${elementIndex + 1} (${element.actualNotes}:${element.normalNotes})'] =
+            tupletDuration;
         elementIndex++;
       }
     }
@@ -154,12 +166,7 @@ class MeasureValidator {
     }
 
     // Validações adicionais
-    _performAdditionalValidations(
-      measure,
-      timeSignature,
-      warnings,
-      errors,
-    );
+    _performAdditionalValidations(measure, timeSignature, warnings, errors);
 
     return MeasureValidationResult(
       isValid: isValid,
@@ -185,9 +192,9 @@ class MeasureValidator {
   }
 
   /// Calcula a capacidade total do compasso baseado na fórmula
-  /// 
+  ///
   /// Fórmula: Capacidade = Numerador × (1 ÷ Denominador)
-  /// 
+  ///
   /// Exemplos:
   /// - 4/4: 4 × (1/4) = 1.0 semibreve
   /// - 3/8: 3 × (1/8) = 0.375 semibreve
@@ -197,7 +204,7 @@ class MeasureValidator {
   }
 
   /// Calcula o valor base de uma figura rítmica
-  /// 
+  ///
   /// Hierarquia de Valores (base = semibreve = 1.0):
   /// - Semibreve: 1.0
   /// - Mínima: 0.5
@@ -257,11 +264,6 @@ class MeasureValidator {
       }
     }
 
-    // TODO: Aplicar quiálteras quando implementadas
-    // if (duration.tuplet != null) {
-    //   modifiedValue = _applyTuplet(modifiedValue, duration.tuplet, warnings);
-    // }
-
     return modifiedValue;
   }
 
@@ -284,38 +286,50 @@ class MeasureValidator {
   }
 
   /// Calcula duração de um tuplet (quiáltera)
-  /// 
+  ///
   /// Fórmula: Duração = (Soma das notas internas) × (normalNotes / actualNotes)
-  /// 
+  ///
   /// Exemplos:
   /// - Tercina (3:2): 3 colcheias no tempo de 2 → cada uma vale 2/3 do valor original
   /// - Quintina (5:4): 5 semicolcheias no tempo de 4 → cada uma vale 4/5 do valor original
   static double _calculateTupletDuration(Tuplet tuplet, List<String> warnings) {
     // Somar duração de todos os elementos dentro do tuplet
     double totalInternalDuration = 0.0;
-    
+
     for (final element in tuplet.elements) {
       if (element is Note) {
         final baseValue = _calculateBaseValue(element.duration.type);
-        final modifiedValue = _applyModifiers(baseValue, element.duration, warnings);
+        final modifiedValue = _applyModifiers(
+          baseValue,
+          element.duration,
+          warnings,
+        );
         totalInternalDuration += modifiedValue;
       } else if (element is Rest) {
         final baseValue = _calculateBaseValue(element.duration.type);
-        final modifiedValue = _applyModifiers(baseValue, element.duration, warnings);
+        final modifiedValue = _applyModifiers(
+          baseValue,
+          element.duration,
+          warnings,
+        );
         totalInternalDuration += modifiedValue;
       } else if (element is Chord) {
         final baseValue = _calculateBaseValue(element.duration.type);
-        final modifiedValue = _applyModifiers(baseValue, element.duration, warnings);
+        final modifiedValue = _applyModifiers(
+          baseValue,
+          element.duration,
+          warnings,
+        );
         totalInternalDuration += modifiedValue;
       }
     }
-    
+
     // Aplicar proporção do tuplet
     // Exemplo: Tercina (3:2) = 3 notas ocupam tempo de 2
     // Então: duração_real = duração_nominal × (2/3)
     final tupletRatio = tuplet.normalNotes / tuplet.actualNotes;
     final actualTupletDuration = totalInternalDuration * tupletRatio;
-    
+
     // Adicionar warning se tuplet tiver proporção incomum
     if (tuplet.actualNotes > 7) {
       warnings.add(
@@ -323,7 +337,7 @@ class MeasureValidator {
         'Verifique se está correto.',
       );
     }
-    
+
     return actualTupletDuration;
   }
 
@@ -359,9 +373,9 @@ class MeasureValidator {
         final duration = element is Note
             ? element.duration
             : element is Rest
-                ? element.duration
-                : (element as Chord).duration;
-        
+            ? element.duration
+            : (element as Chord).duration;
+
         if (duration.type == DurationType.sixteenth ||
             duration.type == DurationType.thirtySecond ||
             duration.type == DurationType.sixtyFourth) {
@@ -385,32 +399,32 @@ class MeasureValidator {
   }) {
     final results = <MeasureValidationResult>[];
     TimeSignature? currentTimeSignature;
-    
+
     for (int i = 0; i < staff.measures.length; i++) {
       final measure = staff.measures[i];
       final isFirstMeasure = i == 0;
-      
+
       // Procurar TimeSignature neste compasso
       TimeSignature? measureTimeSignature = _findTimeSignature(measure);
-      
+
       // Se encontrou, atualizar o TimeSignature corrente
       if (measureTimeSignature != null) {
         currentTimeSignature = measureTimeSignature;
       }
-      
+
       // Validar com TimeSignature herdado
       final result = validateWithTimeSignature(
         measure,
         currentTimeSignature,
         allowAnacrusis: allowAnacrusis && isFirstMeasure,
       );
-      
+
       results.add(result);
     }
 
     return results;
   }
-  
+
   /// Validação com TimeSignature explícito (útil para herança)
   static MeasureValidationResult validateWithTimeSignature(
     Measure measure,
@@ -445,23 +459,27 @@ class MeasureValidator {
       if (element is Note) {
         final duration = _calculateNoteDuration(element, warnings);
         actualDuration += duration;
-        elementBreakdown['Nota ${elementIndex + 1} (${element.duration.type.name})'] = duration;
+        elementBreakdown['Nota ${elementIndex + 1} (${element.duration.type.name})'] =
+            duration;
         elementIndex++;
       } else if (element is Rest) {
         final duration = _calculateRestDuration(element, warnings);
         actualDuration += duration;
-        elementBreakdown['Pausa ${elementIndex + 1} (${element.duration.type.name})'] = duration;
+        elementBreakdown['Pausa ${elementIndex + 1} (${element.duration.type.name})'] =
+            duration;
         elementIndex++;
       } else if (element is Chord) {
         final duration = _calculateChordDuration(element, warnings);
         actualDuration += duration;
-        elementBreakdown['Acorde ${elementIndex + 1} (${element.duration.type.name})'] = duration;
+        elementBreakdown['Acorde ${elementIndex + 1} (${element.duration.type.name})'] =
+            duration;
         elementIndex++;
       } else if (element is Tuplet) {
         // CRÍTICO: Validar notas DENTRO de tuplets!
         final tupletDuration = _calculateTupletDuration(element, warnings);
         actualDuration += tupletDuration;
-        elementBreakdown['Tuplet ${elementIndex + 1} (${element.actualNotes}:${element.normalNotes})'] = tupletDuration;
+        elementBreakdown['Tuplet ${elementIndex + 1} (${element.actualNotes}:${element.normalNotes})'] =
+            tupletDuration;
         elementIndex++;
       }
     }
@@ -487,12 +505,7 @@ class MeasureValidator {
     }
 
     // Validações adicionais
-    _performAdditionalValidations(
-      measure,
-      timeSignature,
-      warnings,
-      errors,
-    );
+    _performAdditionalValidations(measure, timeSignature, warnings, errors);
 
     return MeasureValidationResult(
       isValid: isValid,
@@ -509,19 +522,17 @@ class MeasureValidator {
 
   /// Imprime relatório completo de validação
   static void printValidationReport(List<MeasureValidationResult> results) {
-
     int validCount = 0;
     int invalidCount = 0;
 
     for (int i = 0; i < results.length; i++) {
       final result = results[i];
-      
+
       if (result.isValid) {
         validCount++;
       } else {
         invalidCount++;
       }
     }
-
   }
 }

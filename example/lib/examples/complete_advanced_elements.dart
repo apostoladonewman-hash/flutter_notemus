@@ -1,6 +1,8 @@
 // example/lib/examples/complete_advanced_elements.dart
 // Demonstração completa de elementos avançados: acordes, tuplets, dinâmicas, etc.
 
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_notemus/flutter_notemus.dart';
 

@@ -1,5 +1,7 @@
 // lib/src/beaming/beam_renderer.dart
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_notemus/src/beaming/beam_group.dart';
@@ -19,6 +21,16 @@ class BeamRenderer {
   late final double beamThickness;
   late final double beamGap;
   late final double stemThickness;
+
+  /// Offset horizontal para stem up (em staff spaces)
+  /// Valor empírico ajustado para alinhar com anchors SMuFL stemUpSE
+  /// Sincronizado com StemRenderer para consistência visual
+  static const double STEM_UP_X_OFFSET_SS = 0.7;
+
+  /// Offset horizontal para stem down (em staff spaces)
+  /// Valor empírico ajustado para alinhar com anchors SMuFL stemDownNW
+  /// Sincronizado com StemRenderer para consistência visual
+  static const double STEM_DOWN_X_OFFSET_SS = -0.8;
 
   BeamRenderer({
     required this.theme,
@@ -83,12 +95,10 @@ class BeamRenderer {
           ? positioningEngine.getStemUpAnchor(noteheadGlyph)
           : positioningEngine.getStemDownAnchor(noteheadGlyph);
 
-      // ✅ CRÍTICO: Aplicar ajustes visuais empíricos (IDÊNTICO ao StemRenderer!)
-      const stemUpXOffset = 0.7;
-      const stemDownXOffset = -0.8;
+      // ✅ CRÍTICO: Aplicar ajustes visuais empíricos (usando constantes compartilhadas)
       final xOffset = group.stemDirection == StemDirection.up
-          ? stemUpXOffset
-          : stemDownXOffset;
+          ? STEM_UP_X_OFFSET_SS
+          : STEM_DOWN_X_OFFSET_SS;
 
       // Converter para pixels (IDÊNTICO ao StemRenderer linhas 66-72!)
       final stemX = noteX + (stemAnchor.dx * staffSpace - xOffset);

@@ -1,6 +1,8 @@
 // example/lib/examples/professional_json_example.dart
 // Ode à Alegria - JSON Profissional Completo
 
+// ignore_for_file: unnecessary_import, implementation_imports, prefer_const_constructors, prefer_const_literals_to_create_immutables
+
 import 'package:flutter/material.dart';
 import 'package:flutter_notemus/flutter_notemus.dart';
 import 'package:flutter_notemus/src/parsers/json_parser.dart';
@@ -237,30 +239,15 @@ class ProfessionalJsonExample extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.deepPurple[100]!, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.deepPurple.withOpacity(0.1),
-                    spreadRadius: 2,
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(32),
-              child: MusicScore(
-                staff: staff,
-                theme: MusicScoreTheme(
-                  noteheadColor: Colors.black,
-                  stemColor: Colors.black,
-                  staffLineColor: Colors.black87,
-                  barlineColor: Colors.black,
-                ),
-                staffSpace: 15.0,
+            // 🎼 PARTITURA SIMPLES - Sem containers complexos
+            MusicScore(
+              staff: staff,
+              staffSpace: 15.0,
+              theme: const MusicScoreTheme(
+                noteheadColor: Colors.black,
+                stemColor: Colors.black,
+                staffLineColor: Colors.black87,
+                barlineColor: Colors.black,
               ),
             ),
           ],

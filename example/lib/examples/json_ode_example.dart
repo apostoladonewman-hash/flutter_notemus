@@ -1,8 +1,11 @@
 // example/lib/examples/json_ode_example.dart
 // Ode à Alegria renderizada a partir de JSON simplificado
 
+// ignore_for_file: unnecessary_import, prefer_const_declarations, prefer_const_constructors
+
 import 'package:flutter/material.dart';
 import 'package:flutter_notemus/flutter_notemus.dart';
+// ignore: implementation_imports
 import 'package:flutter_notemus/src/parsers/json_parser.dart';
 
 class JsonOdeExample extends StatelessWidget {
@@ -58,115 +61,119 @@ class JsonOdeExample extends StatelessWidget {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 📋 Header
-            const Text(
-              'Ode à Alegria',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.deepPurple,
-              ),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 📋 Header
+          const Text(
+            'Ode à Alegria',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.deepPurple,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Ludwig van Beethoven - Renderizado a partir de JSON',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[700],
-              ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Ludwig van Beethoven - Renderizado a partir de JSON',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
             ),
-            const Divider(height: 32),
+          ),
+          const Divider(height: 32),
 
-            // 📊 Info Card
-            Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.music_note, color: Colors.deepPurple, size: 32),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Informações da Peça',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
+          // 📊 Info Card
+          Card(
+            elevation: 3,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.music_note,
+                          color: Colors.deepPurple, size: 32),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Informações da Peça',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
                             ),
-                            Text(
-                              'Criado a partir de JSON completo',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
+                          ),
+                          Text(
+                            'Criado a partir de JSON completo',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 24),
-                    _buildInfoRow('Tonalidade:', 'Ré Maior (2 sustenidos)'),
-                    _buildInfoRow('Compasso:', '4/4'),
-                    _buildInfoRow('Compassos:', '${staff.measures.length}'),
-                    _buildInfoRow('Formato:', 'JSON Completo (compatível com MusicXML)'),
-                  ],
-                ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 24),
+                  _buildInfoRow('Tonalidade:', 'Ré Maior (2 sustenidos)'),
+                  _buildInfoRow('Compasso:', '4/4'),
+                  _buildInfoRow('Compassos:', '${staff.measures.length}'),
+                  _buildInfoRow(
+                      'Formato:', 'JSON Completo (compatível com MusicXML)'),
+                ],
               ),
             ),
+          ),
 
-            const SizedBox(height: 24),
+          const SizedBox(height: 24),
 
-            // 🎼 PARTITURA
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Partitura',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+          // 🎼 PARTITURA
+          Card(
+            elevation: 2,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Partitura',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 20),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
-                      padding: const EdgeInsets.all(24),
-                      child: MusicScore(
-                        staff: staff,
-                        theme: MusicScoreTheme(
-                          noteheadColor: Colors.black,
-                          stemColor: Colors.black,
-                          staffLineColor: Colors.black87,
-                          barlineColor: Colors.black,
-                        ),
-                        staffSpace: 14.0,
-                      ),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[300]!),
                     ),
-                  ],
-                ),
+                    padding: const EdgeInsets.all(24),
+                    child: MusicScore(
+                      staff: staff,
+                      theme: MusicScoreTheme(
+                        noteheadColor: Colors.black,
+                        stemColor: Colors.black,
+                        staffLineColor: Colors.black87,
+                        barlineColor: Colors.black,
+                      ),
+                      staffSpace: 14.0,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildInfoRow(String label, String value) {

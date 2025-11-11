@@ -105,9 +105,6 @@ class LayoutCursor {
   }
 
   void addElement(MusicalElement element, List<PositionedElement> elements) {
-    // BoundingBox support comentado temporariamente
-    // TODO: Reativar quando BoundingBoxSupport estiver disponível
-
     // Rastrear clave atual
     if (element is Clef) {
       _currentClef = element;
@@ -116,29 +113,40 @@ class LayoutCursor {
     // ✅ SUPORTE A ACORDES: Adicionar como elemento único
     if (element is Chord && _currentClef != null) {
       // Calcular posições de todas as notas do acorde
-      final staffPositions = element.notes.map((note) => 
-        StaffPositionCalculator.calculate(note.pitch, _currentClef!)
-      ).toList();
-      
+      final staffPositions = element.notes
+          .map(
+            (note) =>
+                StaffPositionCalculator.calculate(note.pitch, _currentClef!),
+          )
+          .toList();
+
       // Usar a posição da nota mais baixa (ou mais alta) como referência Y
       // Isso é apenas para o posicionamento inicial, o ChordRenderer cuidará do resto
-      final avgStaffPosition = staffPositions.reduce((a, b) => a + b) / staffPositions.length;
+      final avgStaffPosition =
+          staffPositions.reduce((a, b) => a + b) / staffPositions.length;
       final chordY = StaffPositionCalculator.toPixelY(
         avgStaffPosition.round(),
         staffSpace,
         _currentY,
       );
-      
+
       // Registrar notas individuais para beaming (se necessário)
       for (final note in element.notes) {
-        final staffPosition = StaffPositionCalculator.calculate(note.pitch, _currentClef!);
-        final noteY = StaffPositionCalculator.toPixelY(staffPosition, staffSpace, _currentY);
-        
+        final staffPosition = StaffPositionCalculator.calculate(
+          note.pitch,
+          _currentClef!,
+        );
+        final noteY = StaffPositionCalculator.toPixelY(
+          staffPosition,
+          staffSpace,
+          _currentY,
+        );
+
         noteXPositions?[note] = _currentX;
         noteStaffPositions?[note] = staffPosition;
         noteYPositions?[note] = noteY;
       }
-      
+
       // Adicionar o CHORD como elemento único
       elements.add(
         PositionedElement(
@@ -149,10 +157,10 @@ class LayoutCursor {
       );
       return; // Chord já foi adicionado
     }
-    
+
     // Calcular posição Y específica para notas (baseado no pitch)
     double elementY = _currentY; // Default: baseline do sistema
-    
+
     // Capturar posições de notas para beaming avançado
     if (element is Note && _currentClef != null) {
       noteXPositions?[element] = _currentX;
@@ -171,7 +179,7 @@ class LayoutCursor {
         _currentY, // baseline do sistema
       );
       noteYPositions?[element] = noteY;
-      
+
       // ✅ CRÍTICO: Usar o noteY calculado, não o _currentY genérico!
       elementY = noteY;
     }
@@ -222,9 +230,6 @@ class LayoutEngine {
   static const double noteMinSpacing = 3.5; // Base para espaçamento entre notas
   static const double measureEndPadding =
       3.0; // Espaço adequado ANTES da barline (agora corrigido!)
-
-  // QUEBRA DE LINHA INTELIGENTE
-  static const int measuresPerSystem = 4; // Compassos por linha
 
   LayoutEngine(
     this.staff, {
@@ -327,7 +332,6 @@ class LayoutEngine {
       final measure = staff.measures[i];
       final isFirst = cursor.isFirstMeasureInSystem;
       final isLast = i == staff.measures.length - 1;
-      final isLastInSystem = (i + 1) % measuresPerSystem == 0 && !isLast;
 
       // HERANÇA DE TIME SIGNATURE: Procurar no compasso atual
       TimeSignature? measureTimeSignature;
@@ -363,9 +367,9 @@ class LayoutEngine {
 
       final measureWidth = _calculateMeasureWidthCursor(measure, isFirst);
 
-      // QUEBRA INTELIGENTE: A cada N compassos OU se não couber
-      if (!isFirst &&
-          (isLastInSystem || cursor.needsSystemBreak(measureWidth))) {
+      // 🔧 QUEBRA RESPONSIVA: Apenas se não couber na largura disponível
+      // Remove quebra forçada a cada N compassos para layout totalmente adaptativo
+      if (!isFirst && cursor.needsSystemBreak(measureWidth)) {
         cursor.startNewSystem();
       }
 
@@ -402,17 +406,12 @@ class LayoutEngine {
       // 1. Próximo compasso não começar com uma
       // 2. Compasso atual não terminar com uma
       if (!nextMeasureStartsWithBarline && !currentMeasureEndsWithBarline) {
+        cursor.advance(measureEndPadding * staffSpace);
         if (isLast) {
           // BARRA DUPLA FINAL
-          cursor.advance(measureEndPadding * staffSpace);
           cursor.addDoubleBarline(positionedElements);
-        } else if (isLastInSystem) {
-          // BARLINE NORMAL no final do sistema
-          cursor.advance(measureEndPadding * staffSpace);
-          cursor.addBarline(positionedElements);
         } else {
           // BARLINE NORMAL entre compassos
-          cursor.advance(measureEndPadding * staffSpace);
           cursor.addBarline(positionedElements);
         }
       } else {
@@ -456,6 +455,14 @@ class LayoutEngine {
       return;
     }
 
+    // Criar mapa de nota → sistema para filtrar beams
+    final Map<Note, int> noteToSystem = {};
+    for (final positioned in positionedElements) {
+      if (positioned.element is Note) {
+        noteToSystem[positioned.element as Note] = positioned.system;
+      }
+    }
+
     // Detectar beam groups usando as notas PROCESSADAS
     final beamGroups = BeamGrouper.groupNotesForBeaming(
       processedNotes,
@@ -465,11 +472,24 @@ class LayoutEngine {
     );
 
     // Analisar cada beam group
-    int groupIndex = 0;
     for (final beamGroup in beamGroups) {
-      groupIndex++;
-
       if (beamGroup.isValid && beamGroup.notes.length >= 2) {
+        // 🔧 CRITICAL FIX: Verificar se todas as notas estão no MESMO SISTEMA
+        // Isso previne beams atravessando quebras de linha
+        final systems = beamGroup.notes
+            .map((note) => noteToSystem[note])
+            .where((system) => system != null)
+            .toSet();
+
+        if (systems.length > 1) {
+          // ❌ SKIP: Grupo tem notas em sistemas diferentes
+          // Isso acontece quando a largura muda e força quebra de linha
+          debugPrint(
+            '[LayoutEngine] Beam group ignorado: notas em sistemas diferentes (${systems.toList()})',
+          );
+          continue;
+        }
+
         try {
           final advancedGroup = _beamAnalyzer.analyzeAdvancedBeamGroup(
             beamGroup.notes,
@@ -479,8 +499,13 @@ class LayoutEngine {
             noteYPositions: _noteYPositions,
           );
           _advancedBeamGroups.add(advancedGroup);
-        } catch (e, stackTrace) {}
-      } else {}
+        } catch (e, stackTrace) {
+          // Log erro mas continua processamento dos demais grupos
+          debugPrint('[LayoutEngine] Erro ao analisar beam group: $e');
+          debugPrint('[LayoutEngine] Stack trace: $stackTrace');
+          // Não adiciona o grupo com erro, mas permite continuar com os outros
+        }
+      }
     }
   }
 
@@ -787,8 +812,9 @@ class LayoutEngine {
       return totalWidth;
     }
 
-    if (element is TempoMark)
+    if (element is TempoMark) {
       return 0.0; // TempoMark renderizado acima, sem largura
+    }
 
     return staffSpace;
   }

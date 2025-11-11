@@ -7,15 +7,33 @@ import '../../core/core.dart';
 
 /// Exports music scores to PDF format
 ///
-/// Converts [Score] or [Staff] objects to high-quality PDF documents
-/// suitable for printing and professional distribution.
+/// ⚠️ **STATUS: EXPERIMENTAL / PLACEHOLDER**
+///
+/// Esta funcionalidade está em desenvolvimento inicial. Atualmente exporta
+/// apenas metadados e estrutura básica do score. A renderização completa
+/// de notação musical em PDF será implementada em versões futuras.
+///
+/// **Funcionalidades Atuais:**
+/// - ✅ Exportação de metadados (título, compositor, etc.)
+/// - ✅ Estrutura de páginas e layout
+/// - ✅ Informações sobre staff groups
+/// - ❌ Renderização de notação musical (EM DESENVOLVIMENTO)
+///
+/// **Roadmap:**
+/// - [ ] Renderização de noteheads usando Bravura font
+/// - [ ] Stems, beams, flags
+/// - [ ] Clefs, key signatures, time signatures
+/// - [ ] Articulações e ornamentos
 ///
 /// Example:
 /// ```dart
 /// final score = Score.grandStaff(trebleStaff, bassStaff);
 /// final exporter = PdfExporter(score);
 /// final pdfBytes = await exporter.export();
+/// // Nota: Renderização musical ainda não implementada (v0.1.0)
 /// ```
+///
+/// Para contribuir com esta feature, veja: CONTRIBUTING.md
 class PdfExporter {
   /// The score to export
   final Score score;
@@ -50,9 +68,7 @@ class PdfExporter {
 
     // Add metadata page if enabled
     if (includeMetadata && (score.title != null || score.composer != null)) {
-      pdf.addPage(
-        _buildMetadataPage(),
-      );
+      pdf.addPage(_buildMetadataPage());
     }
 
     // Add music pages
@@ -117,11 +133,24 @@ class PdfExporter {
   }
 
   /// Add music notation pages to PDF
+  ///
+  /// ⚠️ PLACEHOLDER IMPLEMENTATION
+  /// Esta função atualmente cria páginas com informações estruturais.
+  /// A renderização completa de notação musical está planejada para v0.2.0
   Future<void> _addMusicPages(pw.Document pdf) async {
-    // TODO: Implement actual music rendering
-    // For now, add placeholder pages showing staff groups
+    // ROADMAP: Implementar renderização completa de notação musical
+    // - Renderizar noteheads usando Bravura TTF
+    // - Adicionar stems usando paths
+    // - Implementar beams geometricamente
+    // - Renderizar clefs, key signatures, time signatures
+    //
+    // Por enquanto: placeholder pages mostrando estrutura
 
-    for (var groupIndex = 0; groupIndex < score.staffGroups.length; groupIndex++) {
+    for (
+      var groupIndex = 0;
+      groupIndex < score.staffGroups.length;
+      groupIndex++
+    ) {
       final group = score.staffGroups[groupIndex];
 
       pdf.addPage(
@@ -191,27 +220,14 @@ class PdfExporter {
     String? composer,
     PdfPageFormat pageFormat = PdfPageFormat.a4,
   }) {
-    final score = Score.singleStaff(
-      staff,
-      title: title,
-      composer: composer,
-    );
+    final score = Score.singleStaff(staff, title: title, composer: composer);
 
-    return PdfExporter(
-      score: score,
-      pageFormat: pageFormat,
-    );
+    return PdfExporter(score: score, pageFormat: pageFormat);
   }
 
   /// Factory: Create exporter with custom page format
-  factory PdfExporter.withFormat(
-    Score score,
-    PdfPageFormat format,
-  ) {
-    return PdfExporter(
-      score: score,
-      pageFormat: format,
-    );
+  factory PdfExporter.withFormat(Score score, PdfPageFormat format) {
+    return PdfExporter(score: score, pageFormat: format);
   }
 }
 

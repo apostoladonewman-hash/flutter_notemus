@@ -17,20 +17,14 @@ class BarlineRenderer {
       4.10; // Padrão: 4 SS (linha 1 a 5)
 
   // Ajuste Y offset (em staff spaces) - positivo = para baixo, negativo = para cima
-  // ⚠️ IMPORTANTE: -2.0 é o valor CORRETO!
-  // Glyphs SMuFL têm origem (0,0) na BASELINE TIPOGRÁFICA (canto inferior esquerdo)
-  // barlineSingle tem altura de 4.0 SS (metadata: bBoxNE=[0.144, 4.0], bBoxSW=[0.0, 0.0])
-  // Sistema de coordenadas do pentagrama é centrado na linha 3
-  // Offset -2.0 posiciona a baseline do glyph na linha 5 (Y:-2)
-  // Fazendo o topo do glyph (baseline + 4.0) ficar na linha 1 (Y:+2)
+  // ⚠️ IMPORTANTE: -2.05 compensa a diferença entre baseline tipográfica e topo visual
   static const double barlineYOffset = -2.05;
 
   // Ajuste X offset (em staff spaces) - positivo = direita, negativo = esquerda
   static const double barlineXOffset = 0.0; // Padrão: sem offset
-  
-  // Ajustes X específicos para barras de repetição
-  static const double repeatForwardXOffset = 0.0; // repeatLeft (:||) - sem ajuste
-  static const double repeatBackwardXOffset = -1.2; // repeatRight (||:) - mover para esquerda
+
+  // Offset X específico para barras de repetição (que são mais largas)
+  static const double repeatBarlineXOffset = -1.0; // Ajustar para esquerda
   final StaffCoordinateSystem coordinates;
   final SmuflMetadata metadata;
   final MusicScoreTheme theme;
@@ -50,20 +44,17 @@ class BarlineRenderer {
   void render(Canvas canvas, Barline barline, Offset position) {
     final glyphName = _getGlyphName(barline.type);
 
-    // Calcular posição com offsets ajustáveis
-    final topY =
-        coordinates.getStaffLineY(1) +
-        (barlineYOffset * coordinates.staffSpace);
-    
-    // Usar offset X específico para cada tipo de barra
-    double xOffset;
-    if (barline.type == BarlineType.repeatForward || barline.type == BarlineType.repeatBoth) {
-      xOffset = repeatForwardXOffset;
-    } else if (barline.type == BarlineType.repeatBackward) {
-      xOffset = repeatBackwardXOffset;
-    } else {
-      xOffset = barlineXOffset;
-    }
+    // ✅ Baseline tipográfica na linha 1 + offset de ajuste
+    final line1Y = coordinates.getStaffLineY(1);
+    final offsetAmount = barlineYOffset * coordinates.staffSpace;
+    final topY = line1Y + offsetAmount;
+
+    // Usar offset X específico para barras de repetição
+    final isRepeatBar =
+        barline.type == BarlineType.repeatBackward ||
+        barline.type == BarlineType.repeatForward ||
+        barline.type == BarlineType.repeatBoth;
+    final xOffset = isRepeatBar ? repeatBarlineXOffset : barlineXOffset;
     final x = position.dx + (xOffset * coordinates.staffSpace);
 
     // Altura ajustável
@@ -109,7 +100,4 @@ class BarlineRenderer {
         return 'barlineSingle';
     }
   }
-
-  // ✨ TODO O CÓDIGO ANTERIOR FOI REMOVIDO!
-  // Agora usamos apenas glyphs SMuFL oficiais - muito mais simples!
 }

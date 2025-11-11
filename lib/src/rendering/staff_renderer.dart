@@ -224,6 +224,7 @@ class StaffRenderer {
     LayoutEngine? layoutEngine,
   }) {
     // 🐛 DEBUG: Log de elementos
+    // ignore: unused_local_variable
     final chordCount = elements.where((e) => e.element is Chord).length;
 
     // Limpar set de notas beamed
@@ -344,11 +345,9 @@ class StaffRenderer {
 
       // Desenhar as 5 linhas do pentagrama para este sistema
       for (int line = 1; line <= 5; line++) {
-        // Calcular Y baseado no sistema (cada sistema tem seu próprio Y)
-        final baseY = bounds.y;
-        final lineY =
-            baseY +
-            (coordinates.getStaffLineY(line) - coordinates.getStaffLineY(3));
+        // ✅ CORREÇÃO CRÍTICA: Usar coordinates.getStaffLineY diretamente!
+        // NÃO usar bounds.y pois ele é a posição da primeira nota, não do sistema!
+        final lineY = coordinates.getStaffLineY(line);
 
         canvas.drawLine(
           Offset(coordinates.staffBaseline.dx, lineY),

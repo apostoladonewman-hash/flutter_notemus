@@ -1,5 +1,7 @@
 // example/lib/examples/pdf_export_example.dart
 
+// ignore_for_file: implementation_imports, depend_on_referenced_packages
+
 import 'package:flutter/material.dart';
 import 'package:flutter_notemus/core/core.dart';
 import 'package:flutter_notemus/src/export/export.dart';

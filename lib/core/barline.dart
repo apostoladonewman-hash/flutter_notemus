@@ -25,5 +25,12 @@ enum BarlineType {
 class Barline extends MusicalElement {
   final BarlineType type;
   
-  Barline({this.type = BarlineType.single});
+  /// Cria uma barline com o tipo especificado.
+  /// 
+  /// Ambos `type` e `barlineType` são aceitos para compatibilidade.
+  /// Se ambos forem fornecidos, `barlineType` tem precedência.
+  Barline({
+    BarlineType? type,
+    BarlineType? barlineType,
+  }) : type = barlineType ?? type ?? BarlineType.single;
 }

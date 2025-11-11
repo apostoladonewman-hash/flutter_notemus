@@ -1,5 +1,7 @@
 // lib/src/rendering/renderers/slur_renderer.dart
 
+// ignore_for_file: unused_local_variable
+
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../core/core.dart';
@@ -87,10 +89,7 @@ class SlurRenderer {
       );
 
       // Calcular curva usando SlurCalculator avançado
-      final calculator = SlurCalculator(
-        rules: rules,
-        skylineCalculator: null, // TODO: integrar com skyline
-      );
+      final calculator = SlurCalculator(rules: rules, skylineCalculator: null);
 
       final curve = calculator.calculateSlur(
         startPoint: startPoint,

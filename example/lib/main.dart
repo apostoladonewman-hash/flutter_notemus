@@ -38,6 +38,10 @@ import 'examples/simple_json_example.dart';
 import 'examples/json_ode_example.dart';
 import 'examples/professional_json_example.dart';
 
+// Exemplos de diferentes formações musicais
+import 'examples/simple_piano_example.dart';
+import 'examples/satb_choir_example.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -108,6 +112,8 @@ class _MainScreenState extends State<MainScreen> {
     '📄 JSON: Exemplo Simples',
     '📄 JSON: Ode à Alegria',
     '📄 JSON: Profissional Completo',
+    '🎹 Piano: Grand Staff',
+    '🎤 Coral: SATB (4 vozes)',
   ];
 
   final List<Widget> _pages = const [
@@ -142,6 +148,9 @@ class _MainScreenState extends State<MainScreen> {
     SimpleJsonExample(),
     JsonOdeExample(),
     ProfessionalJsonExample(),
+    // Exemplos de formações musicais
+    SimplePianoExample(),
+    SATBChoirExample(),
   ];
 
   @override

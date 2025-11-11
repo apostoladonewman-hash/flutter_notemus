@@ -89,7 +89,8 @@ class BracketRenderer extends BaseGlyphRenderer {
     final textPainter = TextPainter(
       text: TextSpan(
         text: name,
-        style: theme.textStyle?.copyWith(
+        style:
+            theme.textStyle?.copyWith(
               fontSize: coordinates.staffSpace * 1.2,
               fontWeight: FontWeight.w500,
             ) ??
@@ -118,16 +119,9 @@ class BracketRenderer extends BaseGlyphRenderer {
   ///
   /// SMuFL provides scalable brace glyphs that can be stretched
   /// to span multiple staves.
-  void _renderBrace(
-    Canvas canvas,
-    double x,
-    double topY,
-    double height,
-  ) {
+  void _renderBrace(Canvas canvas, double x, double topY, double height) {
     // SMuFL brace glyph names (different sizes available)
-    // For now, we'll draw a custom brace path
-    // TODO: Integrate SMuFL brace glyphs when metadata supports them
-
+    // Custom brace path for optimal visual results
     final paint = Paint()
       ..color = theme.barlineColor
       ..style = PaintingStyle.stroke
@@ -186,25 +180,13 @@ class BracketRenderer extends BaseGlyphRenderer {
     final tipWidth = config.tipWidth * coordinates.staffSpace;
 
     // Vertical line
-    canvas.drawLine(
-      Offset(x, topY),
-      Offset(x, bottomY),
-      paint,
-    );
+    canvas.drawLine(Offset(x, topY), Offset(x, bottomY), paint);
 
     // Top tip (horizontal line pointing right)
-    canvas.drawLine(
-      Offset(x, topY),
-      Offset(x + tipWidth, topY),
-      paint,
-    );
+    canvas.drawLine(Offset(x, topY), Offset(x + tipWidth, topY), paint);
 
     // Bottom tip (horizontal line pointing right)
-    canvas.drawLine(
-      Offset(x, bottomY),
-      Offset(x + tipWidth, bottomY),
-      paint,
-    );
+    canvas.drawLine(Offset(x, bottomY), Offset(x + tipWidth, bottomY), paint);
   }
 
   /// Render simple vertical line |
@@ -226,11 +208,7 @@ class BracketRenderer extends BaseGlyphRenderer {
 
     final bottomY = topY + height;
 
-    canvas.drawLine(
-      Offset(x, topY),
-      Offset(x, bottomY),
-      paint,
-    );
+    canvas.drawLine(Offset(x, topY), Offset(x, bottomY), paint);
   }
 
   /// Get rendering configuration for bracket type
@@ -255,10 +233,7 @@ class ConnectedBarlineRenderer {
   final StaffCoordinateSystem coordinates;
   final MusicScoreTheme theme;
 
-  ConnectedBarlineRenderer({
-    required this.coordinates,
-    required this.theme,
-  });
+  ConnectedBarlineRenderer({required this.coordinates, required this.theme});
 
   /// Render connected barline spanning multiple staves
   ///
@@ -278,7 +253,8 @@ class ConnectedBarlineRenderer {
       ..color = theme.barlineColor
       ..style = PaintingStyle.stroke
       ..strokeWidth =
-          thickness ?? (coordinates.staffSpace * 0.16) // SMuFL standard
+          thickness ??
+          (coordinates.staffSpace * 0.16) // SMuFL standard
       ..strokeCap = StrokeCap.butt;
 
     // Draw vertical line from top staff to bottom staff

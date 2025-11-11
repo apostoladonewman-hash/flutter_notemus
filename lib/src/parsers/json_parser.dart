@@ -5,7 +5,6 @@ import '../../core/core.dart'; // Tipos do core
 
 /// Parser para converter JSON em objetos musicais
 class JsonMusicParser {
-
   /// Converte um JSON de partitura para um objeto Staff
   static Staff parseStaff(String jsonString) {
     final Map<String, dynamic> json = jsonDecode(jsonString);
@@ -45,7 +44,8 @@ class JsonMusicParser {
 
     switch (type) {
       case 'clef':
-        return Clef(type: json['clefType'] ?? 'g');
+        final clefTypeStr = json['clefType'] as String? ?? 'treble';
+        return Clef(clefType: _parseClefType(clefTypeStr));
 
       case 'keySignature':
         return KeySignature(json['count'] ?? 0);
@@ -234,11 +234,7 @@ class JsonMusicParser {
     );
 
     // Grace notes são notas pequenas decorativas
-    // TODO: Adicionar campo 'isGraceNote' na classe Note se necessário
-    return Note(
-      pitch: pitch,
-      duration: duration,
-    );
+    return Note(pitch: pitch, duration: duration);
   }
 
   // === NOVOS PARSERS: ORNAMENTOS ===
@@ -256,23 +252,40 @@ class JsonMusicParser {
 
   static OrnamentType _parseOrnamentType(String type) {
     switch (type) {
-      case 'trill': return OrnamentType.trill;
-      case 'trillSharp': return OrnamentType.trillSharp;
-      case 'trillFlat': return OrnamentType.trillFlat;
-      case 'trillNatural': return OrnamentType.trillNatural;
-      case 'turn': return OrnamentType.turn;
-      case 'invertedTurn': return OrnamentType.invertedTurn;
-      case 'turnInverted': return OrnamentType.turnInverted;
-      case 'mordent': return OrnamentType.mordent;
-      case 'invertedMordent': return OrnamentType.invertedMordent;
-      case 'shortTrill': return OrnamentType.shortTrill;
-      case 'fermata': return OrnamentType.fermata;
-      case 'fermataBelow': return OrnamentType.fermataBelow;
-      case 'acciaccatura': return OrnamentType.acciaccatura;
-      case 'glissando': return OrnamentType.glissando;
-      case 'portamento': return OrnamentType.portamento;
-      case 'pralltriller': return OrnamentType.pralltriller;
-      default: return OrnamentType.trill;
+      case 'trill':
+        return OrnamentType.trill;
+      case 'trillSharp':
+        return OrnamentType.trillSharp;
+      case 'trillFlat':
+        return OrnamentType.trillFlat;
+      case 'trillNatural':
+        return OrnamentType.trillNatural;
+      case 'turn':
+        return OrnamentType.turn;
+      case 'invertedTurn':
+        return OrnamentType.invertedTurn;
+      case 'turnInverted':
+        return OrnamentType.turnInverted;
+      case 'mordent':
+        return OrnamentType.mordent;
+      case 'invertedMordent':
+        return OrnamentType.invertedMordent;
+      case 'shortTrill':
+        return OrnamentType.shortTrill;
+      case 'fermata':
+        return OrnamentType.fermata;
+      case 'fermataBelow':
+        return OrnamentType.fermataBelow;
+      case 'acciaccatura':
+        return OrnamentType.acciaccatura;
+      case 'glissando':
+        return OrnamentType.glissando;
+      case 'portamento':
+        return OrnamentType.portamento;
+      case 'pralltriller':
+        return OrnamentType.pralltriller;
+      default:
+        return OrnamentType.trill;
     }
   }
 
@@ -281,10 +294,13 @@ class JsonMusicParser {
   static TieType _parseTieType(dynamic value) {
     if (value is String) {
       switch (value) {
-        case 'start': return TieType.start;
+        case 'start':
+          return TieType.start;
         case 'stop':
-        case 'end': return TieType.end;
-        default: return TieType.start;
+        case 'end':
+          return TieType.end;
+        default:
+          return TieType.start;
       }
     }
     return TieType.start;
@@ -293,10 +309,13 @@ class JsonMusicParser {
   static SlurType _parseSlurType(dynamic value) {
     if (value is String) {
       switch (value) {
-        case 'start': return SlurType.start;
+        case 'start':
+          return SlurType.start;
         case 'stop':
-        case 'end': return SlurType.end;
-        default: return SlurType.start;
+        case 'end':
+          return SlurType.end;
+        default:
+          return SlurType.start;
       }
     }
     return SlurType.start;
@@ -376,7 +395,7 @@ class JsonMusicParser {
   static Dynamic _parseDynamicFromMap(Map<String, dynamic> json) {
     final String dynamicTypeString = json['dynamicType'] ?? 'mezzoForte';
     final DynamicType dynamicType = _parseDynamicType(dynamicTypeString);
-    
+
     return Dynamic(
       type: dynamicType,
       customText: json['customText'],
@@ -387,22 +406,38 @@ class JsonMusicParser {
 
   static DynamicType _parseDynamicType(String type) {
     switch (type) {
-      case 'pianissimo': return DynamicType.pianissimo;
-      case 'piano': return DynamicType.piano;
-      case 'mezzoPiano': return DynamicType.mezzoPiano;
-      case 'mezzoForte': return DynamicType.mezzoForte;
-      case 'forte': return DynamicType.forte;
-      case 'fortissimo': return DynamicType.fortissimo;
-      case 'sforzando': return DynamicType.sforzando;
-      case 'crescendo': return DynamicType.crescendo;
-      case 'diminuendo': return DynamicType.diminuendo;
-      case 'pp': return DynamicType.pp;
-      case 'p': return DynamicType.p;
-      case 'mp': return DynamicType.mp;
-      case 'mf': return DynamicType.mf;
-      case 'f': return DynamicType.f;
-      case 'ff': return DynamicType.ff;
-      default: return DynamicType.mezzoForte;
+      case 'pianissimo':
+        return DynamicType.pianissimo;
+      case 'piano':
+        return DynamicType.piano;
+      case 'mezzoPiano':
+        return DynamicType.mezzoPiano;
+      case 'mezzoForte':
+        return DynamicType.mezzoForte;
+      case 'forte':
+        return DynamicType.forte;
+      case 'fortissimo':
+        return DynamicType.fortissimo;
+      case 'sforzando':
+        return DynamicType.sforzando;
+      case 'crescendo':
+        return DynamicType.crescendo;
+      case 'diminuendo':
+        return DynamicType.diminuendo;
+      case 'pp':
+        return DynamicType.pp;
+      case 'p':
+        return DynamicType.p;
+      case 'mp':
+        return DynamicType.mp;
+      case 'mf':
+        return DynamicType.mf;
+      case 'f':
+        return DynamicType.f;
+      case 'ff':
+        return DynamicType.ff;
+      default:
+        return DynamicType.mezzoForte;
     }
   }
 
@@ -421,11 +456,16 @@ class JsonMusicParser {
 
   static BreathType _parseBreathType(String type) {
     switch (type) {
-      case 'comma': return BreathType.comma;
-      case 'tick': return BreathType.tick;
-      case 'upbow': return BreathType.upbow;
-      case 'caesura': return BreathType.caesura;
-      default: return BreathType.comma;
+      case 'comma':
+        return BreathType.comma;
+      case 'tick':
+        return BreathType.tick;
+      case 'upbow':
+        return BreathType.upbow;
+      case 'caesura':
+        return BreathType.caesura;
+      default:
+        return BreathType.comma;
     }
   }
 
@@ -479,7 +519,7 @@ class JsonMusicParser {
   static MusicText _parseTextFromMap(Map<String, dynamic> json) {
     final String textTypeString = json['textType'] ?? 'expression';
     final TextType textType = _parseTextType(textTypeString);
-    
+
     final String placementString = json['placement'] ?? 'above';
     final TextPlacement placement = _parseTextPlacement(placementString);
 
@@ -493,40 +533,59 @@ class JsonMusicParser {
 
   static TextType _parseTextType(String type) {
     switch (type) {
-      case 'expression': return TextType.expression;
-      case 'instruction': return TextType.instruction;
-      case 'lyrics': return TextType.lyrics;
-      case 'rehearsal': return TextType.rehearsal;
-      case 'chord': return TextType.chord;
-      case 'tempo': return TextType.tempo;
-      case 'dynamics': return TextType.dynamics;
-      case 'title': return TextType.title;
-      case 'subtitle': return TextType.subtitle;
-      case 'composer': return TextType.composer;
-      default: return TextType.expression;
+      case 'expression':
+        return TextType.expression;
+      case 'instruction':
+        return TextType.instruction;
+      case 'lyrics':
+        return TextType.lyrics;
+      case 'rehearsal':
+        return TextType.rehearsal;
+      case 'chord':
+        return TextType.chord;
+      case 'tempo':
+        return TextType.tempo;
+      case 'dynamics':
+        return TextType.dynamics;
+      case 'title':
+        return TextType.title;
+      case 'subtitle':
+        return TextType.subtitle;
+      case 'composer':
+        return TextType.composer;
+      default:
+        return TextType.expression;
     }
   }
 
   static TextPlacement _parseTextPlacement(String placement) {
     switch (placement) {
-      case 'above': return TextPlacement.above;
-      case 'below': return TextPlacement.below;
-      case 'inside': return TextPlacement.inside;
-      default: return TextPlacement.above;
+      case 'above':
+        return TextPlacement.above;
+      case 'below':
+        return TextPlacement.below;
+      case 'inside':
+        return TextPlacement.inside;
+      default:
+        return TextPlacement.above;
     }
   }
 
   /// Converte um Staff para JSON
   static String staffToJson(Staff staff) {
     final Map<String, dynamic> json = {
-      'measures': staff.measures.map((measure) => _measureToMap(measure)).toList(),
+      'measures': staff.measures
+          .map((measure) => _measureToMap(measure))
+          .toList(),
     };
     return jsonEncode(json);
   }
 
   static Map<String, dynamic> _measureToMap(Measure measure) {
     return {
-      'elements': measure.elements.map((element) => _elementToMap(element)).toList(),
+      'elements': measure.elements
+          .map((element) => _elementToMap(element))
+          .toList(),
     };
   }
 
@@ -563,14 +622,21 @@ class JsonMusicParser {
         'type': _durationTypeToString(note.duration.type),
         'dots': note.duration.dots,
       },
-      'articulations': note.articulations.map((a) => _articulationToString(a)).toList(),
+      'articulations': note.articulations
+          .map((a) => _articulationToString(a))
+          .toList(),
       if (note.tie != null) 'tie': _tieTypeToString(note.tie!),
       if (note.slur != null) 'slur': _slurTypeToString(note.slur!),
-      if (note.ornaments.isNotEmpty) 'ornaments': note.ornaments.map((o) => {
-        'ornamentType': _ornamentTypeToString(o.type),
-        'above': o.above,
-        if (o.text != null) 'text': o.text,
-      }).toList(),
+      if (note.ornaments.isNotEmpty)
+        'ornaments': note.ornaments
+            .map(
+              (o) => {
+                'ornamentType': _ornamentTypeToString(o.type),
+                'above': o.above,
+                if (o.text != null) 'text': o.text,
+              },
+            )
+            .toList(),
     };
   }
 
@@ -580,86 +646,133 @@ class JsonMusicParser {
       'actualNotes': tuplet.actualNotes,
       'normalNotes': tuplet.normalNotes,
       'elements': tuplet.elements.map((e) => _elementToMap(e)).toList(),
-      if (tuplet.bracketConfig != null) 'bracket': {
-        'show': tuplet.bracketConfig!.show,
-        'thickness': tuplet.bracketConfig!.thickness,
-      },
-      if (tuplet.numberConfig != null) 'number': {
-        'showAsRatio': tuplet.numberConfig!.showAsRatio,
-        'fontSize': tuplet.numberConfig!.fontSize,
-        'showNoteValue': tuplet.numberConfig!.showNoteValue,
-      },
+      if (tuplet.bracketConfig != null)
+        'bracket': {
+          'show': tuplet.bracketConfig!.show,
+          'thickness': tuplet.bracketConfig!.thickness,
+        },
+      if (tuplet.numberConfig != null)
+        'number': {
+          'showAsRatio': tuplet.numberConfig!.showAsRatio,
+          'fontSize': tuplet.numberConfig!.fontSize,
+          'showNoteValue': tuplet.numberConfig!.showNoteValue,
+        },
     };
   }
 
   static String _tieTypeToString(TieType type) {
     switch (type) {
-      case TieType.start: return 'start';
-      case TieType.end: return 'end';
+      case TieType.start:
+        return 'start';
+      case TieType.end:
+        return 'end';
     }
   }
 
   static String _slurTypeToString(SlurType type) {
     switch (type) {
-      case SlurType.start: return 'start';
-      case SlurType.end: return 'end';
+      case SlurType.start:
+        return 'start';
+      case SlurType.end:
+        return 'end';
     }
   }
 
   static String _ornamentTypeToString(OrnamentType type) {
     switch (type) {
-      case OrnamentType.trill: return 'trill';
-      case OrnamentType.trillSharp: return 'trillSharp';
-      case OrnamentType.trillFlat: return 'trillFlat';
-      case OrnamentType.trillNatural: return 'trillNatural';
-      case OrnamentType.turn: return 'turn';
-      case OrnamentType.invertedTurn: return 'invertedTurn';
-      case OrnamentType.turnInverted: return 'turnInverted';
-      case OrnamentType.turnSlash: return 'turnSlash';
-      case OrnamentType.mordent: return 'mordent';
-      case OrnamentType.invertedMordent: return 'invertedMordent';
-      case OrnamentType.shortTrill: return 'shortTrill';
-      case OrnamentType.fermata: return 'fermata';
-      case OrnamentType.fermataBelow: return 'fermataBelow';
-      case OrnamentType.fermataBelowInverted: return 'fermataBelowInverted';
-      case OrnamentType.acciaccatura: return 'acciaccatura';
-      case OrnamentType.appoggiaturaUp: return 'appoggiaturaUp';
-      case OrnamentType.appoggiaturaDown: return 'appoggiaturaDown';
-      case OrnamentType.glissando: return 'glissando';
-      case OrnamentType.portamento: return 'portamento';
-      case OrnamentType.slide: return 'slide';
-      case OrnamentType.scoop: return 'scoop';
-      case OrnamentType.fall: return 'fall';
-      case OrnamentType.doit: return 'doit';
-      case OrnamentType.plop: return 'plop';
-      case OrnamentType.bend: return 'bend';
-      case OrnamentType.shake: return 'shake';
-      case OrnamentType.wavyLine: return 'wavyLine';
-      case OrnamentType.zigzagLine: return 'zigzagLine';
-      case OrnamentType.schleifer: return 'schleifer';
-      case OrnamentType.mordentUpperPrefix: return 'mordentUpperPrefix';
-      case OrnamentType.mordentLowerPrefix: return 'mordentLowerPrefix';
-      case OrnamentType.trillLigature: return 'trillLigature';
-      case OrnamentType.haydn: return 'haydn';
-      case OrnamentType.zigZagLineNoRightEnd: return 'zigZagLineNoRightEnd';
-      case OrnamentType.zigZagLineWithRightEnd: return 'zigZagLineWithRightEnd';
-      case OrnamentType.arpeggio: return 'arpeggio';
-      case OrnamentType.grace: return 'grace';
-      case OrnamentType.pralltriller: return 'pralltriller';
-      case OrnamentType.mordentWithUpperPrefix: return 'mordentWithUpperPrefix';
-      case OrnamentType.slideUp: return 'slideUp';
-      case OrnamentType.slideDown: return 'slideDown';
-      case OrnamentType.doubleTongue: return 'doubleTongue';
-      case OrnamentType.tripleTongue: return 'tripleTongue';
+      case OrnamentType.trill:
+        return 'trill';
+      case OrnamentType.trillSharp:
+        return 'trillSharp';
+      case OrnamentType.trillFlat:
+        return 'trillFlat';
+      case OrnamentType.trillNatural:
+        return 'trillNatural';
+      case OrnamentType.turn:
+        return 'turn';
+      case OrnamentType.invertedTurn:
+        return 'invertedTurn';
+      case OrnamentType.turnInverted:
+        return 'turnInverted';
+      case OrnamentType.turnSlash:
+        return 'turnSlash';
+      case OrnamentType.mordent:
+        return 'mordent';
+      case OrnamentType.invertedMordent:
+        return 'invertedMordent';
+      case OrnamentType.shortTrill:
+        return 'shortTrill';
+      case OrnamentType.fermata:
+        return 'fermata';
+      case OrnamentType.fermataBelow:
+        return 'fermataBelow';
+      case OrnamentType.fermataBelowInverted:
+        return 'fermataBelowInverted';
+      case OrnamentType.acciaccatura:
+        return 'acciaccatura';
+      case OrnamentType.appoggiaturaUp:
+        return 'appoggiaturaUp';
+      case OrnamentType.appoggiaturaDown:
+        return 'appoggiaturaDown';
+      case OrnamentType.glissando:
+        return 'glissando';
+      case OrnamentType.portamento:
+        return 'portamento';
+      case OrnamentType.slide:
+        return 'slide';
+      case OrnamentType.scoop:
+        return 'scoop';
+      case OrnamentType.fall:
+        return 'fall';
+      case OrnamentType.doit:
+        return 'doit';
+      case OrnamentType.plop:
+        return 'plop';
+      case OrnamentType.bend:
+        return 'bend';
+      case OrnamentType.shake:
+        return 'shake';
+      case OrnamentType.wavyLine:
+        return 'wavyLine';
+      case OrnamentType.zigzagLine:
+        return 'zigzagLine';
+      case OrnamentType.schleifer:
+        return 'schleifer';
+      case OrnamentType.mordentUpperPrefix:
+        return 'mordentUpperPrefix';
+      case OrnamentType.mordentLowerPrefix:
+        return 'mordentLowerPrefix';
+      case OrnamentType.trillLigature:
+        return 'trillLigature';
+      case OrnamentType.haydn:
+        return 'haydn';
+      case OrnamentType.zigZagLineNoRightEnd:
+        return 'zigZagLineNoRightEnd';
+      case OrnamentType.zigZagLineWithRightEnd:
+        return 'zigZagLineWithRightEnd';
+      case OrnamentType.arpeggio:
+        return 'arpeggio';
+      case OrnamentType.grace:
+        return 'grace';
+      case OrnamentType.pralltriller:
+        return 'pralltriller';
+      case OrnamentType.mordentWithUpperPrefix:
+        return 'mordentWithUpperPrefix';
+      case OrnamentType.slideUp:
+        return 'slideUp';
+      case OrnamentType.slideDown:
+        return 'slideDown';
+      case OrnamentType.doubleTongue:
+        return 'doubleTongue';
+      case OrnamentType.tripleTongue:
+        return 'tripleTongue';
     }
   }
 
   static Map<String, dynamic> _restToMap(Rest rest) {
     return {
       'type': 'rest',
-      'duration': {
-        'type': _durationTypeToString(rest.duration.type),
-      },
+      'duration': {'type': _durationTypeToString(rest.duration.type)},
     };
   }
 
@@ -720,6 +833,59 @@ class JsonMusicParser {
         return 'open';
       case ArticulationType.halfStopped:
         return 'halfStopped';
+    }
+  }
+
+  /// Parseia string para ClefType enum
+  static ClefType _parseClefType(String clefTypeStr) {
+    switch (clefTypeStr.toLowerCase()) {
+      case 'treble':
+      case 'g':
+        return ClefType.treble;
+      case 'treble8va':
+        return ClefType.treble8va;
+      case 'treble8vb':
+        return ClefType.treble8vb;
+      case 'treble15ma':
+        return ClefType.treble15ma;
+      case 'treble15mb':
+        return ClefType.treble15mb;
+      case 'bass':
+      case 'f':
+        return ClefType.bass;
+      case 'bassthirdline':
+        return ClefType.bassThirdLine;
+      case 'bass8va':
+        return ClefType.bass8va;
+      case 'bass8vb':
+        return ClefType.bass8vb;
+      case 'bass15ma':
+        return ClefType.bass15ma;
+      case 'bass15mb':
+        return ClefType.bass15mb;
+      case 'soprano':
+        return ClefType.soprano;
+      case 'mezzosoprano':
+        return ClefType.mezzoSoprano;
+      case 'alto':
+      case 'c':
+        return ClefType.alto;
+      case 'tenor':
+        return ClefType.tenor;
+      case 'baritone':
+        return ClefType.baritone;
+      case 'c8vb':
+        return ClefType.c8vb;
+      case 'percussion':
+        return ClefType.percussion;
+      case 'percussion2':
+        return ClefType.percussion2;
+      case 'tab6':
+        return ClefType.tab6;
+      case 'tab4':
+        return ClefType.tab4;
+      default:
+        return ClefType.treble; // Fallback padrão
     }
   }
 }

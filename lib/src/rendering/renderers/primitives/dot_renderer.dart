@@ -1,5 +1,7 @@
 // lib/src/rendering/renderers/primitives/dot_renderer.dart
 
+// ignore_for_file: constant_identifier_names
+
 import 'package:flutter/material.dart';
 import '../../../../core/core.dart';
 import '../../../theme/music_score_theme.dart';
@@ -15,6 +17,24 @@ import '../base_glyph_renderer.dart';
 /// - Notas em ESPAÇOS (staffPosition ÍMPAR): ponto no espaço acima
 class DotRenderer extends BaseGlyphRenderer {
   final MusicScoreTheme theme;
+
+  /// Compensação para baseline correction do TextPainter (em staff spaces)
+  ///
+  /// O TextPainter aplica uma correção de baseline de -2.5 SS às noteheads.
+  /// Estes valores compensam essa correção para posicionar os pontos corretamente.
+  /// Baseado em: README.md seção "Technical Notes: Flutter TextPainter & SMuFL"
+  static const double BASELINE_CORRECTION_COMPENSATION_ABOVE = -2.5;
+  static const double BASELINE_CORRECTION_COMPENSATION_BELOW = 2.5;
+  static const double BASELINE_CORRECTION_COMPENSATION_SPACE = 2.0;
+
+  /// Distância horizontal do ponto em relação ao centro da nota (em SS)
+  /// Behind Bars (p.14): "aproximadamente 1 staff space da nota"
+  /// Cálculo: metade da largura da nota (~0.59 SS) + clearance (~0.4 SS) + margem
+  static const double DOT_HORIZONTAL_OFFSET = 1.3;
+
+  /// Espaçamento entre múltiplos pontos (em SS)
+  /// Behind Bars (p.14): "0.5 staff spaces entre pontos"
+  static const double DOT_SPACING = 0.5;
 
   DotRenderer({
     required super.metadata,
@@ -38,19 +58,15 @@ class DotRenderer extends BaseGlyphRenderer {
     if (note.duration.dots == 0) return;
 
     // CORREÇÃO SMuFL: Posicionamento horizontal conforme Behind Bars
-    // Behind Bars (p.14): "aproximadamente 1 staff space da nota"
-    // notePosition já é o CENTRO da nota
-    // Largura típica de noteheadBlack = 1.18 staff spaces
-    // Centro da nota + metade da largura (~0.59) + clearance (~0.4) ≈ 1.0 SS
-    final dotStartX = notePosition.dx + (coordinates.staffSpace * 1.3);
+    final dotStartX =
+        notePosition.dx + (coordinates.staffSpace * DOT_HORIZONTAL_OFFSET);
 
     // CORREÇÃO CRÍTICA: Posição Y deve alinhar EXATAMENTE ao centro da cabeça
     final dotY = _calculateDotY(notePosition.dy, staffPosition);
 
     // Desenhar cada ponto (múltiplos pontos ficam horizontalmente espaçados)
     for (int i = 0; i < note.duration.dots; i++) {
-      // Espaçamento entre pontos: 0.5 staff spaces (Behind Bars)
-      final dotX = dotStartX + (i * coordinates.staffSpace * 0.5);
+      final dotX = dotStartX + (i * coordinates.staffSpace * DOT_SPACING);
       _drawDot(canvas, Offset(dotX, dotY));
     }
   }
@@ -66,29 +82,23 @@ class DotRenderer extends BaseGlyphRenderer {
     // - Notas em LINHAS (staffPosition PAR): ponto fica NO ESPAÇO adjacente
     // - Notas em ESPAÇOS (staffPosition ÍMPAR): ponto fica no mesmo espaço
     //
-    // IMPORTANTE: staffPosition é em "meios de staff space"
-    // - PAR (0, 2, 4, -2, -4...): nota está em uma LINHA
-    // - ÍMPAR (1, 3, 5, -1, -3...): nota está em um ESPAÇO
-    //
-    // ⚠️ VALORES EMPÍRICOS - Compensam a baseline correction aplicada nas noteheads
-    // A baseline correction move as noteheads para cima em ~2.5 staff spaces.
-    // Estes valores compensam esse offset para posicionar os pontos corretamente.
+    // Valores compensam a baseline correction do TextPainter (-2.5 SS)
 
     if (staffPosition.isEven) {
       // Nota em LINHA: ponto vai para o ESPAÇO mais próximo do centro
       if (staffPosition > 0) {
         // Nota acima do centro → ponto vai para BAIXO
-        // Valor empírico que compensa baseline correction
-        return noteY + (coordinates.staffSpace * -2.5);
+        return noteY +
+            (coordinates.staffSpace * BASELINE_CORRECTION_COMPENSATION_ABOVE);
       } else {
         // Nota no centro ou abaixo → ponto vai para CIMA
-        // Valor empírico que compensa baseline correction
-        return noteY - (coordinates.staffSpace * 2.5);
+        return noteY -
+            (coordinates.staffSpace * BASELINE_CORRECTION_COMPENSATION_BELOW);
       }
     } else {
       // Nota em ESPAÇO: ponto fica no MESMO espaço
-      // Valor empírico que compensa baseline correction
-      return noteY - (coordinates.staffSpace * 2.0);
+      return noteY -
+          (coordinates.staffSpace * BASELINE_CORRECTION_COMPENSATION_SPACE);
     }
   }
 

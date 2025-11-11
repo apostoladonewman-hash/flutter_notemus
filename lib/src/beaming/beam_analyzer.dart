@@ -145,16 +145,17 @@ class BeamAnalyzer {
     final firstNote = group.notes.first;
     final lastNote = group.notes.last;
 
-    // ✅ SEMPRE usar Y absoluto (noteYPositions deve sempre estar disponível)
-    if (noteYPositions == null || noteYPositions.isEmpty) {
-      throw ArgumentError('noteYPositions é obrigatório para cálculo de beams');
-    }
+    // Usar noteYPositions se disponível, senão calcular baseado em staffPosition
+    double firstNoteY;
+    double lastNoteY;
 
-    final firstNoteY = noteYPositions[firstNote];
-    final lastNoteY = noteYPositions[lastNote];
-
-    if (firstNoteY == null || lastNoteY == null) {
-      throw ArgumentError('Posições Y das notas não encontradas');
+    if (noteYPositions != null && noteYPositions.isNotEmpty) {
+      firstNoteY = noteYPositions[firstNote] ?? _calculateYFromStaffPosition(firstNote, noteStaffPositions);
+      lastNoteY = noteYPositions[lastNote] ?? _calculateYFromStaffPosition(lastNote, noteStaffPositions);
+    } else {
+      // Fallback: calcular Y baseado em staffPosition
+      firstNoteY = _calculateYFromStaffPosition(firstNote, noteStaffPositions);
+      lastNoteY = _calculateYFromStaffPosition(lastNote, noteStaffPositions);
     }
 
     // Calcular ângulo usando positioning engine
@@ -184,12 +185,30 @@ class BeamAnalyzer {
     _adjustBeamForExtremNote(group, noteYPositions);
   }
 
+  /// Calcula posição Y de uma nota baseado no staffPosition (fallback)
+  double _calculateYFromStaffPosition(Note note, Map<Note, int>? noteStaffPositions) {
+    if (noteStaffPositions == null) {
+      return staffSpace * 3.0; // Linha central padrão
+    }
+
+    final staffPosition = noteStaffPositions[note] ?? 0;
+    // staffPosition 0 = linha central
+    // Positivo = acima, Negativo = abaixo
+    // Cada posição = 0.5 staff space
+    return staffSpace * 3.0 - (staffPosition * staffSpace * 0.5);
+  }
+
   /// Ajusta beam para que a nota extrema tenha exatamente a altura mínima
   /// Nota extrema = nota mais alta (stems up) ou mais baixa (stems down)
   void _adjustBeamForExtremNote(
     AdvancedBeamGroup group,
-    Map<Note, double> noteYPositions,
+    Map<Note, double>? noteYPositions,
   ) {
+    // Se não temos noteYPositions, não podemos fazer o ajuste preciso
+    if (noteYPositions == null || noteYPositions.isEmpty) {
+      return;
+    }
+
     // Altura mínima de haste SMuFL: 3.5 staff spaces
     final minStemHeight = 3.5 * staffSpace;
 

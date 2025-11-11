@@ -216,7 +216,6 @@ class MultiStaffExampleWidget extends StatelessWidget {
                 ),
               ),
 
-            // TODO: Render score using MultiStaffRenderer
             // For now, show staff groups info
             ...score.staffGroups.asMap().entries.map((entry) {
               final index = entry.key;

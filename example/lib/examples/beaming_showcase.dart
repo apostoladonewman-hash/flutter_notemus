@@ -3,6 +3,7 @@
 // Mostra primary beams, secondary beams, e broken beams (fractional)
 
 import 'package:flutter/material.dart';
+// ignore: unnecessary_import
 import 'package:flutter_notemus/core/core.dart';
 import 'package:flutter_notemus/flutter_notemus.dart';
 
@@ -29,50 +30,50 @@ class BeamingShowcase extends StatelessWidget {
               'Demonstração de beams profissionais seguindo especificações SMuFL e Behind Bars',
             ),
             const SizedBox(height: 24),
-            
+
             // Exemplo 1: Primary Beams (Colcheias)
             _buildExampleSection(
               title: '1️⃣ Primary Beams - Colcheias (8th notes)',
               description: '4 colcheias conectadas por um beam primário',
               staff: _createPrimaryBeamsExample(),
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // Exemplo 2: Secondary Beams (Semicolcheias)
             _buildExampleSection(
               title: '2️⃣ Secondary Beams - Semicolcheias (16th notes)',
               description: '4 semicolcheias com primary e secondary beams',
               staff: _createSecondaryBeamsExample(),
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // Exemplo 3: Broken Beams (Ritmo pontuado)
             _buildExampleSection(
               title: '3️⃣ Broken Beams - Ritmo Pontuado',
               description: 'Colcheia pontuada + semicolcheia (beam fracionado)',
               staff: _createBrokenBeamsExample(),
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // Exemplo 4: Tertiary Beams (Fusas)
             _buildExampleSection(
               title: '4️⃣ Tertiary Beams - Fusas (32nd notes)',
               description: '8 fusas com três níveis de beams',
               staff: _createTertiaryBeamsExample(),
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // Exemplo 5: Beams Complexos
             _buildExampleSection(
               title: '5️⃣ Padrões Complexos',
               description: 'Combinação de diferentes durações',
               staff: _createComplexBeamsExample(),
             ),
-            
+
             const SizedBox(height: 48),
             _buildFooter(),
           ],
@@ -184,10 +185,10 @@ class BeamingShowcase extends StatelessWidget {
   Staff _createPrimaryBeamsExample() {
     final staff = Staff();
     final measure = Measure(); // AUTO-BEAMING ativado
-    
+
     measure.add(Clef(clefType: ClefType.treble));
     measure.add(TimeSignature(numerator: 4, denominator: 4));
-    
+
     // 4 colcheias ascendentes
     measure.add(Note(
       pitch: const Pitch(step: 'C', octave: 5),
@@ -205,9 +206,9 @@ class BeamingShowcase extends StatelessWidget {
       pitch: const Pitch(step: 'F', octave: 5),
       duration: const Duration(DurationType.eighth),
     ));
-    
+
     measure.add(Rest(duration: const Duration(DurationType.half)));
-    
+
     staff.add(measure);
     return staff;
   }
@@ -216,10 +217,10 @@ class BeamingShowcase extends StatelessWidget {
   Staff _createSecondaryBeamsExample() {
     final staff = Staff();
     final measure = Measure(); // AUTO-BEAMING ativado
-    
+
     measure.add(Clef(clefType: ClefType.treble));
     measure.add(TimeSignature(numerator: 4, denominator: 4));
-    
+
     // 4 semicolcheias
     measure.add(Note(
       pitch: const Pitch(step: 'E', octave: 5),
@@ -237,10 +238,10 @@ class BeamingShowcase extends StatelessWidget {
       pitch: const Pitch(step: 'A', octave: 5),
       duration: const Duration(DurationType.sixteenth),
     ));
-    
+
     measure.add(Rest(duration: const Duration(DurationType.half)));
     measure.add(Rest(duration: const Duration(DurationType.quarter)));
-    
+
     staff.add(measure);
     return staff;
   }
@@ -249,24 +250,24 @@ class BeamingShowcase extends StatelessWidget {
   Staff _createBrokenBeamsExample() {
     final staff = Staff();
     final measure = Measure(); // AUTO-BEAMING ativado
-    
+
     measure.add(Clef(clefType: ClefType.treble));
     measure.add(TimeSignature(numerator: 4, denominator: 4));
-    
+
     // Colcheia pontuada + semicolcheia (broken beam)
     measure.add(Note(
       pitch: const Pitch(step: 'G', octave: 5),
       duration: const Duration(DurationType.eighth, dots: 1),
     ));
-    
+
     measure.add(Note(
       pitch: const Pitch(step: 'A', octave: 5),
       duration: const Duration(DurationType.sixteenth),
     ));
-    
+
     measure.add(Rest(duration: const Duration(DurationType.half)));
     measure.add(Rest(duration: const Duration(DurationType.eighth)));
-    
+
     staff.add(measure);
     return staff;
   }
@@ -275,10 +276,10 @@ class BeamingShowcase extends StatelessWidget {
   Staff _createTertiaryBeamsExample() {
     final staff = Staff();
     final measure = Measure(); // AUTO-BEAMING ativado
-    
+
     measure.add(Clef(clefType: ClefType.treble));
     measure.add(TimeSignature(numerator: 4, denominator: 4));
-    
+
     // 8 fusas (32nd notes)
     measure.add(Note(
       pitch: const Pitch(step: 'C', octave: 5),
@@ -314,7 +315,7 @@ class BeamingShowcase extends StatelessWidget {
     ));
     measure.add(Rest(duration: const Duration(DurationType.half)));
     measure.add(Rest(duration: const Duration(DurationType.quarter)));
-    
+
     staff.add(measure);
     return staff;
   }
@@ -323,10 +324,10 @@ class BeamingShowcase extends StatelessWidget {
   Staff _createComplexBeamsExample() {
     final staff = Staff();
     final measure = Measure(); // AUTO-BEAMING ativado
-    
+
     measure.add(Clef(clefType: ClefType.treble));
     measure.add(TimeSignature(numerator: 4, denominator: 4));
-    
+
     // 2 colcheias
     measure.add(Note(
       pitch: const Pitch(step: 'C', octave: 5),
@@ -336,7 +337,7 @@ class BeamingShowcase extends StatelessWidget {
       pitch: const Pitch(step: 'E', octave: 5),
       duration: const Duration(DurationType.eighth),
     ));
-    
+
     // 4 semicolcheias
     measure.add(Note(
       pitch: const Pitch(step: 'G', octave: 5),
@@ -354,7 +355,7 @@ class BeamingShowcase extends StatelessWidget {
       pitch: const Pitch(step: 'D', octave: 5),
       duration: const Duration(DurationType.sixteenth),
     ));
-    
+
     // Colcheia pontuada + semicolcheia
     measure.add(Note(
       pitch: const Pitch(step: 'C', octave: 5),
@@ -364,7 +365,7 @@ class BeamingShowcase extends StatelessWidget {
       pitch: const Pitch(step: 'B', octave: 4),
       duration: const Duration(DurationType.sixteenth),
     ));
-    
+
     staff.add(measure);
     return staff;
   }

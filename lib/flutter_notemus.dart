@@ -79,6 +79,7 @@ class _MusicScoreState extends State<MusicScore> {
 
         return LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
+            // Use available width directly without modifications
             final layoutEngine = LayoutEngine(
               widget.staff,
               availableWidth: constraints.maxWidth,
@@ -93,6 +94,10 @@ class _MusicScoreState extends State<MusicScore> {
             }
 
             final totalHeight = _calculateTotalHeight(positionedElements);
+            final totalWidth = _calculateTotalWidth(
+              positionedElements,
+              constraints.maxWidth,
+            );
 
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -102,7 +107,7 @@ class _MusicScoreState extends State<MusicScore> {
                 controller: _verticalController,
                 child: RepaintBoundary(
                   child: CustomPaint(
-                    size: Size(constraints.maxWidth, totalHeight),
+                    size: Size(totalWidth, totalHeight),
                     painter: MusicScorePainter(
                       positionedElements: positionedElements,
                       metadata: SmuflMetadata(),
@@ -110,8 +115,12 @@ class _MusicScoreState extends State<MusicScore> {
                       staffSpace: widget.staffSpace,
                       layoutEngine: layoutEngine,
                       viewportSize: constraints.biggest,
-                      scrollOffsetX: _horizontalController.hasClients ? _horizontalController.offset : 0.0,
-                      scrollOffsetY: _verticalController.hasClients ? _verticalController.offset : 0.0,
+                      scrollOffsetX: _horizontalController.hasClients
+                          ? _horizontalController.offset
+                          : 0.0,
+                      scrollOffsetY: _verticalController.hasClients
+                          ? _verticalController.offset
+                          : 0.0,
                     ),
                   ),
                 ),
@@ -121,6 +130,31 @@ class _MusicScoreState extends State<MusicScore> {
         );
       },
     );
+  }
+
+  /// Calcula a largura total necessária para renderizar a partitura
+  double _calculateTotalWidth(
+    List<PositionedElement> elements,
+    double maxWidth,
+  ) {
+    if (elements.isEmpty) return maxWidth.isFinite ? maxWidth : 800.0;
+
+    // Se maxWidth é finito, usar ele
+    if (maxWidth.isFinite) return maxWidth;
+
+    // Caso contrário, calcular baseado nos elementos mais distantes
+    double maxX = 0.0;
+    for (final element in elements) {
+      final elementRightEdge =
+          element.position.dx +
+          (widget.staffSpace * 20); // Estimativa de largura do elemento
+      if (elementRightEdge > maxX) {
+        maxX = elementRightEdge;
+      }
+    }
+
+    // Adicionar margem final
+    return maxX + (widget.staffSpace * 10);
   }
 
   double _calculateTotalHeight(List<PositionedElement> elements) {
@@ -176,8 +210,9 @@ class MusicScorePainter extends CustomPainter {
     canvas.clipRect(Rect.fromLTWH(0, 0, size.width, size.height));
 
     // OTIMIZAÇÃO 2: Calcular sistemas visíveis
-    final systemHeight = staffSpace * 10;
-    final visibleSystemRange = _calculateVisibleSystems(systemHeight);
+    // 🔧 TEMPORARIAMENTE DESABILITADO
+    // final systemHeight = staffSpace * 10;
+    // final visibleSystemRange = _calculateVisibleSystems(systemHeight);
 
     // Agrupar elementos por sistema
     final Map<int, List<PositionedElement>> systemGroups = {};
@@ -189,12 +224,6 @@ class MusicScorePainter extends CustomPainter {
     // OTIMIZAÇÃO 3: Renderizar APENAS sistemas visíveis
     for (final entry in systemGroups.entries) {
       final systemIndex = entry.key;
-
-      // Skip sistemas fora do viewport
-      if (!visibleSystemRange.contains(systemIndex)) {
-        continue;
-      }
-
       final elements = entry.value;
       final systemY = (systemIndex * staffSpace * 10) + (staffSpace * 5);
       final staffBaseline = Offset(0, systemY);
@@ -217,55 +246,6 @@ class MusicScorePainter extends CustomPainter {
     // int rendered = visibleSystemRange.length;
     // int skipped = systemGroups.length - rendered;
     // debugPrint('Canvas Clipping: Renderizados=$rendered, Pulados=$skipped');
-  }
-
-  /// Calcula quais sistemas estão visíveis no viewport atual
-  ///
-  /// Retorna um range (Set) de índices de sistemas que intersectam o viewport.
-  /// Adiciona margem de 1 sistema acima e abaixo para suavidade no scroll.
-  Set<int> _calculateVisibleSystems(double systemHeight) {
-    // VALIDAÇÃO: Prevenir divisão por zero e valores inválidos
-    if (systemHeight <= 0 || !systemHeight.isFinite) {
-      // Fallback: renderizar apenas sistema 0
-      return {0};
-    }
-    
-    if (!viewportSize.height.isFinite || viewportSize.height <= 0) {
-      // Fallback: renderizar apenas sistema 0
-      return {0};
-    }
-    
-    if (!scrollOffsetY.isFinite) {
-      // Fallback: renderizar apenas sistema 0
-      return {0};
-    }
-    
-    // Viewport Y range (com margem)
-    final margin = systemHeight; // 1 sistema de margem
-    final viewportTop = scrollOffsetY - margin;
-    final viewportBottom = scrollOffsetY + viewportSize.height + margin;
-
-    // Calcular sistemas visíveis com proteção contra Infinity
-    final firstSystemRaw = (viewportTop / systemHeight).floor();
-    final lastSystemRaw = (viewportBottom / systemHeight).ceil();
-    
-    // Validar que os valores são finitos antes de fazer clamp
-    if (!firstSystemRaw.isFinite || !lastSystemRaw.isFinite) {
-      return {0};
-    }
-    
-    final firstSystem = firstSystemRaw.clamp(0, 999);
-    final lastSystem = lastSystemRaw.clamp(0, 999);
-    
-    // Validar range
-    if (lastSystem < firstSystem) {
-      return {0};
-    }
-
-    // Retornar range como Set
-    return Set<int>.from(
-      List<int>.generate(lastSystem - firstSystem + 1, (i) => firstSystem + i),
-    );
   }
 
   @override

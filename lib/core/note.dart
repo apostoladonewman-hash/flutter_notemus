@@ -11,23 +11,23 @@ import '../src/music_model/bounding_box_support.dart';
 
 /// Define os tipos de articulações que uma nota pode ter.
 enum ArticulationType {
-  staccato,         // Ponto
-  staccatissimo,    // Ponto triangular
-  accent,           // Acento
-  strongAccent,     // Acento forte
-  tenuto,           // Traço
-  marcato,          // Combinação de acento e tenuto
-  legato,           // Ligado (normalmente como slur)
-  portato,          // Combinação de staccato e tenuto
-  upBow,            // Arco para cima (cordas)
-  downBow,          // Arco para baixo (cordas)
-  harmonics,        // Harmônicos
-  pizzicato,        // Pizzicato
-  snap,             // Snap pizzicato
-  thumb,            // Dedilhado com polegar
-  stopped,          // Notas abafadas (metal)
-  open,             // Notas abertas (metal)
-  halfStopped,      // Meio abafado (metal)
+  staccato, // Ponto
+  staccatissimo, // Ponto triangular
+  accent, // Acento
+  strongAccent, // Acento forte
+  tenuto, // Traço
+  marcato, // Combinação de acento e tenuto
+  legato, // Ligado (normalmente como slur)
+  portato, // Combinação de staccato e tenuto
+  upBow, // Arco para cima (cordas)
+  downBow, // Arco para baixo (cordas)
+  harmonics, // Harmônicos
+  pizzicato, // Pizzicato
+  snap, // Snap pizzicato
+  thumb, // Dedilhado com polegar
+  stopped, // Notas abafadas (metal)
+  open, // Notas abertas (metal)
+  halfStopped, // Meio abafado (metal)
 }
 
 /// Representa uma nota musical com altura e duração.
@@ -71,4 +71,23 @@ class Note extends MusicalElement with BoundingBoxSupport {
     this.techniques = const [],
     this.voice,
   });
+
+  /// Factory constructor para criar uma nota de forma simplificada
+  ///
+  /// Exemplo:
+  /// ```dart
+  /// Note.simple('C5', DurationType.quarter)
+  /// Note.simple('F#4', DurationType.half)
+  /// Note.simple('Bb3', DurationType.eighth)
+  /// ```
+  factory Note.simple(
+    String notation,
+    DurationType durationType, {
+    int dots = 0,
+  }) {
+    return Note(
+      pitch: Pitch.fromString(notation),
+      duration: Duration(durationType, dots: dots),
+    );
+  }
 }

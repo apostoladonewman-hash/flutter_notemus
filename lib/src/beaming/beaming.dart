@@ -8,6 +8,8 @@
 /// - Geometria precisa baseada em especificações SMuFL
 /// - Beat position calculation (Behind Bars) para quebras inteligentes
 
+// ignore_for_file: dangling_library_doc_comments
+
 export 'beam_types.dart';
 export 'beam_segment.dart';
 export 'beam_group.dart';

@@ -31,7 +31,7 @@ class LruCache<K, V> {
     }
 
     // Mover para o fim (mais recente)
-    final value = _cache.remove(key)!;
+    final value = _cache.remove(key) as V;
     _cache[key] = value;
     return value;
   }

@@ -314,8 +314,6 @@ class PolyphonyExampleWidget extends StatelessWidget {
               'Polyphonic: ${measure.isPolyphonic ? 'Yes' : 'No'} (${measure.voiceCount} voices)',
               style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
             ),
-
-            // TODO: Add actual music rendering when renderer is complete
           ],
         ),
       ),

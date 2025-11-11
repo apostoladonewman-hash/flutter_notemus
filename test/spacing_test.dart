@@ -1,6 +1,8 @@
 /// Testes do Sistema de Espaçamento Inteligente
-/// 
+///
 /// Valida os modelos matemáticos, compensação óptica e combinação adaptativa.
+library;
+
 import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_notemus/src/layout/spacing/spacing.dart';
@@ -18,8 +20,12 @@ void main() {
 
       // Todos os erros devem ser < 10%
       errors.forEach((duration, errorPercent) {
-        expect(errorPercent, lessThan(10.0),
-            reason: 'Duração $duration tem erro de ${errorPercent.toStringAsFixed(2)}%');
+        expect(
+          errorPercent,
+          lessThan(10.0),
+          reason:
+              'Duração $duration tem erro de ${errorPercent.toStringAsFixed(2)}%',
+        );
       });
     });
 
@@ -33,9 +39,18 @@ void main() {
       final quarterDuration = 0.25; // semínima
 
       // Calcular espaçamento para várias semínimas
-      final space1 = calculator.calculateSpace(quarterDuration, shortestDuration);
-      final space2 = calculator.calculateSpace(quarterDuration, shortestDuration);
-      final space3 = calculator.calculateSpace(quarterDuration, shortestDuration);
+      final space1 = calculator.calculateSpace(
+        quarterDuration,
+        shortestDuration,
+      );
+      final space2 = calculator.calculateSpace(
+        quarterDuration,
+        shortestDuration,
+      );
+      final space3 = calculator.calculateSpace(
+        quarterDuration,
+        shortestDuration,
+      );
 
       expect(space1, equals(space2));
       expect(space2, equals(space3));
@@ -86,14 +101,8 @@ void main() {
     });
 
     test('Hastes alternadas geram compensação', () {
-      final prevContext = OpticalContext.note(
-        stemUp: true,
-        duration: 0.25,
-      );
-      final currContext = OpticalContext.note(
-        stemUp: false,
-        duration: 0.25,
-      );
+      final prevContext = OpticalContext.note(stemUp: true, duration: 0.25);
+      final currContext = OpticalContext.note(stemUp: false, duration: 0.25);
 
       final compensation = compensator.calculateCompensation(
         prevContext,
@@ -106,10 +115,7 @@ void main() {
 
     test('Pausa antes de nota com haste para cima gera compensação', () {
       final prevContext = OpticalContext.rest(duration: 0.25);
-      final currContext = OpticalContext.note(
-        stemUp: true,
-        duration: 0.25,
-      );
+      final currContext = OpticalContext.note(stemUp: true, duration: 0.25);
 
       final compensation = compensator.calculateCompensation(
         prevContext,
@@ -120,10 +126,7 @@ void main() {
     });
 
     test('Acidentes adicionam espaço', () {
-      final prevContext = OpticalContext.note(
-        stemUp: true,
-        duration: 0.25,
-      );
+      final prevContext = OpticalContext.note(stemUp: true, duration: 0.25);
       final currContext = OpticalContext.note(
         stemUp: true,
         duration: 0.25,
@@ -139,19 +142,10 @@ void main() {
     });
 
     test('Compensação pode ser desabilitada', () {
-      final disabled = OpticalCompensator(
-        staffSpace: 12.0,
-        enabled: false,
-      );
+      final disabled = OpticalCompensator(staffSpace: 12.0, enabled: false);
 
-      final prevContext = OpticalContext.note(
-        stemUp: true,
-        duration: 0.25,
-      );
-      final currContext = OpticalContext.note(
-        stemUp: false,
-        duration: 0.25,
-      );
+      final prevContext = OpticalContext.note(stemUp: true, duration: 0.25);
+      final currContext = OpticalContext.note(stemUp: false, duration: 0.25);
 
       final compensation = disabled.calculateCompensation(
         prevContext,
@@ -166,9 +160,7 @@ void main() {
     late IntelligentSpacingEngine engine;
 
     setUp(() {
-      engine = IntelligentSpacingEngine(
-        preferences: SpacingPreferences.normal,
-      );
+      engine = IntelligentSpacingEngine(preferences: SpacingPreferences.normal);
       engine.initializeOpticalCompensator(12.0);
     });
 
@@ -198,7 +190,8 @@ void main() {
       expect(textual[1].xPosition, greaterThan(textual[0].xPosition));
 
       // Deve haver gap mínimo
-      final gap = textual[1].xPosition - (textual[0].xPosition + textual[0].width);
+      final gap =
+          textual[1].xPosition - (textual[0].xPosition + textual[0].width);
       expect(gap, greaterThanOrEqualTo(0.25 * 12.0));
     });
 
@@ -263,9 +256,18 @@ void main() {
 
   group('SpacingPreferences', () {
     test('Presets têm valores válidos', () {
-      expect(SpacingPreferences.compact.spacingFactor, lessThan(SpacingPreferences.normal.spacingFactor));
-      expect(SpacingPreferences.normal.spacingFactor, lessThan(SpacingPreferences.spacious.spacingFactor));
-      expect(SpacingPreferences.spacious.spacingFactor, lessThan(SpacingPreferences.pedagogical.spacingFactor));
+      expect(
+        SpacingPreferences.compact.spacingFactor,
+        lessThan(SpacingPreferences.normal.spacingFactor),
+      );
+      expect(
+        SpacingPreferences.normal.spacingFactor,
+        lessThan(SpacingPreferences.spacious.spacingFactor),
+      );
+      expect(
+        SpacingPreferences.spacious.spacingFactor,
+        lessThan(SpacingPreferences.pedagogical.spacingFactor),
+      );
     });
 
     test('copyWith cria nova instância com modificações', () {

@@ -1,5 +1,7 @@
 // example/lib/examples/tuplets_example.dart
 
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_notemus/flutter_notemus.dart';
 
@@ -21,7 +23,8 @@ class TupletsExample extends StatelessWidget {
           children: [
             _buildSection(
               title: 'Tercina Simples (3:2)',
-              description: 'Três colcheias no lugar de duas - a quiáltera mais comum.',
+              description:
+                  'Três colcheias no lugar de duas - a quiáltera mais comum.',
               elements: [
                 Clef(clefType: ClefType.treble),
                 Tuplet(
@@ -194,7 +197,8 @@ class TupletsExample extends StatelessWidget {
             ),
             _buildSection(
               title: 'Tercina Sem Suporte',
-              description: 'Tercina mostrando apenas o número, sem linha de suporte.',
+              description:
+                  'Tercina mostrando apenas o número, sem linha de suporte.',
               elements: [
                 Clef(clefType: ClefType.treble),
                 Tuplet(
@@ -222,7 +226,8 @@ class TupletsExample extends StatelessWidget {
             ),
             _buildSection(
               title: 'Duína (2:3)',
-              description: 'Duas colcheias no lugar de três - quiáltera invertida.',
+              description:
+                  'Duas colcheias no lugar de três - quiáltera invertida.',
               elements: [
                 Clef(clefType: ClefType.treble),
                 Tuplet(

@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.1.0] - 2025-11-04
+## [0.1.0] - 2025-11-10
 
 ### 🎉 Initial Release
 
-First public release of Flutter Notemus - a professional music notation rendering package for Flutter.
+First public release of Flutter Notemus - a professional music notation rendering package for Flutter with complete SMuFL support.
 
 ### ✨ Added
 
@@ -38,7 +38,8 @@ First public release of Flutter Notemus - a professional music notation renderin
 - **Tuplets**: Triplets, quintuplets, and other irregular groupings
 - **Slurs & Ties**: Curved connectors between notes
 - **Repeat Marks**: Segno, coda, and other navigation symbols
-- **Barlines**: Single, double, final, and repeat barlines
+- **Barlines**: Single, double, final, and repeat barlines using official SMuFL glyphs
+- **Breath Marks**: Comma, tick, and caesura marks for wind/vocal music
 
 #### Specialized Renderers (SRP Architecture)
 - `NoteRenderer` - Note head rendering
@@ -89,27 +90,63 @@ First public release of Flutter Notemus - a professional music notation renderin
 - Complete example application
 - Inline code documentation
 
-### 🎨 Themes
+### 🎨 Themes & Customization
 - Default theme with professional appearance
 - Customizable colors for all elements
 - Support for dark mode
 - Theme inheritance and composition
+- Adjustable staff space sizing
+- Configurable barline and staff line margins
 
-### 🐛 Bug Fixes
+### 📦 Database Integration
+- Complete JSON format for storage
+- SQLite integration examples
+- Database schema recommendations
+- Full CRUD operation examples
+- Cloud sync patterns (Firebase, Supabase)
 
-#### Critical Fixes Applied
+#### Layout & Rendering
+- **Horizontal Justification**: Measures stretch proportionally to fill available width
+- **Intelligent Line Breaking**: Automatic line breaks every 4 measures
+- **Optimized Staff Lines**: Lines end exactly where music ends with smart barline detection
+- **Configurable Margins**: Type-aware staff line margins (normal vs final barlines)
+- **Multi-System Support**: Correct rendering across multiple staff systems
+
+#### Advanced Beaming System
+- **Primary Beams**: Colcheias (8th notes) with automatic slope calculation
+- **Secondary Beams**: Semicolcheias, fusas, semifusas (up to 128th notes)
+- **Broken Beams**: Fractional beams for dotted rhythms following "Behind Bars" rules
+- **Smart Breaking**: "Two levels above" rule implementation
+- **SMuFL Precision**: 0.5 SS thickness, 0.25 SS gap, perfect geometry
+
+#### Measure Validation System
+- **Automatic Validation**: Music theory-based validation
+- **Real-time Capacity Checking**: Prevents overfilled measures
+- **Detailed Error Messages**: Shows exactly what's wrong
+- **Tuplet-Aware**: Correctly handles complex rhythms
+
+### 🐛 Critical Bug Fixes
+
+#### Barline Rendering
+- **Multi-System Alignment**: Fixed barlines appearing outside staff on systems 1+
+  - Root cause: Inconsistent coordinate systems between staff lines and barlines
+  - Solution: Use `StaffCoordinateSystem.getStaffLineY()` as single source of truth
+- **Repeat Barline Positioning**: Adjusted X offset (-1.0 SS) for proper alignment
+- **SMuFL Baseline Correction**: Applied `barlineYOffset = -2.05` for typographic accuracy
+
+#### Other Fixes
 - **Augmentation Dot Positioning**: Fixed vertical alignment using real note position
 - **Stem Lengths**: Corrected stem lengths for both individual notes and chords
-  - Individual notes: Limited to 3.5-4.0 staff spaces on ledger lines
-  - Chords: Custom stem length based on note span (span + 3.5 staff spaces)
-- **Ledger Lines**: Fixed alignment with noteheads by removing incorrect baseline correction
-- **Baseline Correction**: Applied proper baseline correction for SMuFL glyphs
+- **Ledger Lines**: Fixed alignment with noteheads
+- **Baseline Correction**: Applied proper SMuFL glyph baseline correction
 
 ### 🔧 Technical Improvements
 - Optimized glyph rendering with TextPainter caching
 - Efficient collision detection algorithm
 - Memory-efficient asset loading
 - Clean separation of concerns
+- Complete removal of debug logging for production
+- Zero TODO comments - all planned features documented in README
 
 ### 📦 Dependencies
 - Flutter SDK: >=1.17.0
@@ -118,17 +155,29 @@ First public release of Flutter Notemus - a professional music notation renderin
 
 ---
 
-## [Unreleased]
+## [Unreleased] - v0.2.0 (Planned for January 2026)
 
-### Planned Features
+### 📅 Planned Features
+
+#### Multi-Staff Support
+- **Piano Grand Staff**: Two interconnected staves with shared barlines
+- **SATB Vocal Scores**: Four-part vocal notation with proper grouping
+- **Cross-Staff Beaming**: Beams spanning multiple staves
+
+#### Notation Enhancements
+- **Tablature**: 4-string (bass) and 6-string (guitar) tablature rendering
+- **Chord Symbols**: Jazz/pop chord symbols with proper typography
+- **Grace Notes**: Appoggiatura and acciaccatura with correct spacing
+- **Multiple Voices**: Independent rhythms on same staff
+
+#### Additional Features
 - MusicXML import/export support
 - MIDI playback integration
-- Advanced beam rendering
-- Cross-staff notation
-- Multi-voice support per staff
-- Guitar tablature enhancements
 - Percussion notation improvements
 - Performance optimizations
+
+### 🚫 Current Limitations (v0.1.0)
+See README.md for detailed information on features not yet implemented but planned for v0.2.0.
 
 ---
 

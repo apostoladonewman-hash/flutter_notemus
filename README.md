@@ -238,6 +238,81 @@ See `BARLINE_CALIBRATION_GUIDE.md` for technical details.
 
 ---
 
+## ⚠️ Current Limitations (v0.1.0)
+
+Flutter Notemus v0.1.0 focuses on **single-staff notation** with professional engraving quality. The following features are **not yet supported** but have their foundations implemented:
+
+### 🚫 Not Supported in v0.1.0
+
+- **🎹 Piano Notation (Grand Staff)** - Two interconnected staves for piano/keyboard music
+- **🎶 SATB (Four-Part Vocal)** - Soprano, Alto, Tenor, Bass on separate staves
+- **🎸 Tablature** - Guitar/bass tablature notation
+- **🎼 Chord Symbols** - Jazz/pop chord symbols above the staff (e.g., "C7", "Am", "G#dim")
+- **🎵 Grace Notes** - Appoggiatura and acciaccatura (small ornamental notes)
+- **🎹 Multiple Voices** - Independent voices on the same staff
+
+### 📅 Roadmap - January 2026 Update
+
+All the above features are **planned for the next major release** (v0.2.0) in **January 2026**:
+
+#### ✅ Foundations Already Implemented
+
+The architectural groundwork is complete:
+- **Multi-staff rendering system** - Ready for grand staff and SATB
+- **Staff grouping with brackets** - `BracketRenderer` fully functional
+- **Tablature clef support** - `ClefType.tab4` and `ClefType.tab6` defined
+- **Chord symbol data model** - `Text` element with `TextType.chord`
+- **Grace note parsing** - JSON parser ready for `isGraceNote` field
+- **Voice separation logic** - Core model supports multiple voices
+
+#### 🔨 What's Coming in v0.2.0
+
+1. **Piano Grand Staff**
+   - Automatic bracket rendering between treble and bass staves
+   - Shared barlines and system breaks
+   - Cross-staff beaming
+
+2. **SATB Vocal Scores**
+   - Four independent staves with proper grouping
+   - Lyrics support for each voice
+   - Staff labels (Soprano, Alto, Tenor, Bass)
+
+3. **Tablature**
+   - 4-string (bass) and 6-string (guitar) tablature
+   - Fret number rendering
+   - Techniques (hammer-on, pull-off, slides)
+
+4. **Chord Symbols**
+   - Jazz/pop chord symbols with proper typography
+   - Symbol positioning above staves
+   - Chord diagram support
+
+5. **Ornaments & Grace Notes**
+   - Appoggiatura (accented grace note)
+   - Acciaccatura (quick grace note with slash)
+   - Proper spacing and collision avoidance
+
+6. **Multiple Voices**
+   - Independent rhythms on same staff
+   - Stem direction logic (voice 1 up, voice 2 down)
+   - Collision detection between voices
+
+#### 🎯 Current Focus (v0.1.0)
+
+V0.1.0 provides **production-ready single-staff notation** with:
+- ✅ Professional engraving quality
+- ✅ 2932 SMuFL glyphs from Bravura font
+- ✅ Complete JSON import/export
+- ✅ Automatic measure validation
+- ✅ Advanced beaming system
+- ✅ Slurs, ties, dynamics, articulations
+- ✅ Repeat signs and breath marks
+- ✅ Perfect for: lead sheets, melodies, single-instrument scores
+
+**Recommendation:** If you need grand staff or SATB right now, consider waiting for v0.2.0 in January 2026 or contributing to the development!
+
+---
+
 ## 🚀 Installation
 
 Add to your `pubspec.yaml`:
@@ -690,6 +765,461 @@ MusicScore(
 
 - Ver também: `PARSERS_GUIDE.md` para exemplos avançados
 - Exemplo completo: `example/professional_json_example.dart`
+
+---
+
+## 📦 Database Integration - Complete Example
+
+### 🎯 Use Case: Music Library App
+
+Flutter Notemus JSON format is designed to work seamlessly with databases. Here's a complete example of how to store and retrieve music notation data.
+
+### 📊 Database Schema Example (SQL)
+
+```sql
+-- Main table for musical pieces
+CREATE TABLE musical_pieces (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    composer TEXT,
+    arranger TEXT,
+    genre TEXT,
+    difficulty TEXT, -- beginner, intermediate, advanced
+    duration_seconds INTEGER,
+    time_signature TEXT, -- e.g., "4/4", "3/4", "6/8"
+    key_signature TEXT, -- e.g., "C major", "D minor", "2 sharps"
+    tempo_bpm INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- JSON notation data
+    notation_json TEXT NOT NULL, -- Flutter Notemus JSON format
+    -- Metadata
+    tags TEXT, -- JSON array: ["classical", "beginner", "piano"]
+    notes TEXT, -- Performance notes, teaching comments
+    UNIQUE(title, composer)
+);
+
+-- Index for faster searches
+CREATE INDEX idx_composer ON musical_pieces(composer);
+CREATE INDEX idx_genre ON musical_pieces(genre);
+CREATE INDEX idx_difficulty ON musical_pieces(difficulty);
+```
+
+### 📝 Complete JSON Example for Database
+
+Here's a complete, ready-to-store JSON example representing "Ode to Joy" (first phrase):
+
+```json
+{
+  "metadata": {
+    "title": "Ode to Joy (Excerpt)",
+    "composer": "Ludwig van Beethoven",
+    "arranger": "Simplified arrangement",
+    "timeSignature": "4/4",
+    "keySignature": "D major (2 sharps)",
+    "tempo": "Allegro assai (120 BPM)"
+  },
+  "measures": [
+    {
+      "number": 1,
+      "elements": [
+        {"type": "clef", "clefType": "treble"},
+        {"type": "keySignature", "count": 2},
+        {"type": "timeSignature", "numerator": 4, "denominator": 4},
+        {
+          "type": "note",
+          "pitch": {"step": "F", "octave": 5, "alter": 1.0},
+          "duration": {"type": "quarter", "dots": 0}
+        },
+        {
+          "type": "note",
+          "pitch": {"step": "F", "octave": 5, "alter": 1.0},
+          "duration": {"type": "quarter", "dots": 0}
+        },
+        {
+          "type": "note",
+          "pitch": {"step": "G", "octave": 5, "alter": 0.0},
+          "duration": {"type": "quarter", "dots": 0}
+        },
+        {
+          "type": "note",
+          "pitch": {"step": "A", "octave": 5, "alter": 0.0},
+          "duration": {"type": "quarter", "dots": 0}
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "elements": [
+        {
+          "type": "note",
+          "pitch": {"step": "A", "octave": 5, "alter": 0.0},
+          "duration": {"type": "quarter", "dots": 0}
+        },
+        {
+          "type": "note",
+          "pitch": {"step": "G", "octave": 5, "alter": 0.0},
+          "duration": {"type": "quarter", "dots": 0}
+        },
+        {
+          "type": "note",
+          "pitch": {"step": "F", "octave": 5, "alter": 1.0},
+          "duration": {"type": "quarter", "dots": 0}
+        },
+        {
+          "type": "note",
+          "pitch": {"step": "E", "octave": 5, "alter": 0.0},
+          "duration": {"type": "quarter", "dots": 0}
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "elements": [
+        {
+          "type": "note",
+          "pitch": {"step": "D", "octave": 5, "alter": 0.0},
+          "duration": {"type": "quarter", "dots": 0}
+        },
+        {
+          "type": "note",
+          "pitch": {"step": "D", "octave": 5, "alter": 0.0},
+          "duration": {"type": "quarter", "dots": 0}
+        },
+        {
+          "type": "note",
+          "pitch": {"step": "E", "octave": 5, "alter": 0.0},
+          "duration": {"type": "quarter", "dots": 0}
+        },
+        {
+          "type": "note",
+          "pitch": {"step": "F", "octave": 5, "alter": 1.0},
+          "duration": {"type": "quarter", "dots": 1}
+        },
+        {
+          "type": "note",
+          "pitch": {"step": "E", "octave": 5, "alter": 0.0},
+          "duration": {"type": "eighth", "dots": 0}
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "elements": [
+        {
+          "type": "note",
+          "pitch": {"step": "E", "octave": 5, "alter": 0.0},
+          "duration": {"type": "half", "dots": 0}
+        },
+        {
+          "type": "rest",
+          "duration": {"type": "quarter", "dots": 0}
+        },
+        {
+          "type": "breath",
+          "breathType": "comma"
+        },
+        {
+          "type": "barline",
+          "barlineType": "final_"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### 📱 Flutter Implementation - Complete Flow
+
+#### 1️⃣ Saving to Database
+
+```dart
+import 'dart:convert';
+import 'package:sqflite/sqflite.dart';
+import 'package:flutter_notemus/flutter_notemus.dart';
+
+class MusicDatabase {
+  static Future<Database> get database async {
+    return openDatabase(
+      'music_library.db',
+      version: 1,
+      onCreate: (db, version) {
+        return db.execute(
+          '''CREATE TABLE musical_pieces (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            composer TEXT,
+            time_signature TEXT,
+            key_signature TEXT,
+            tempo_bpm INTEGER,
+            notation_json TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )''',
+        );
+      },
+    );
+  }
+
+  /// Save a musical piece to the database
+  static Future<int> savePiece({
+    required String title,
+    required String composer,
+    required Staff staff, // Flutter Notemus Staff object
+    String? timeSignature,
+    String? keySignature,
+    int? tempoBpm,
+  }) async {
+    final db = await database;
+    
+    // Convert Staff to JSON
+    final jsonMap = {
+      'metadata': {
+        'title': title,
+        'composer': composer,
+        'timeSignature': timeSignature,
+        'keySignature': keySignature,
+        'tempo': tempoBpm != null ? '$tempoBpm BPM' : null,
+      },
+      'measures': staff.measures.map((measure) => {
+        'elements': measure.elements.map((element) {
+          // Convert each element to JSON
+          return _elementToJson(element);
+        }).toList(),
+      }).toList(),
+    };
+    
+    final notationJson = jsonEncode(jsonMap);
+    
+    return db.insert(
+      'musical_pieces',
+      {
+        'title': title,
+        'composer': composer,
+        'time_signature': timeSignature,
+        'key_signature': keySignature,
+        'tempo_bpm': tempoBpm,
+        'notation_json': notationJson,
+      },
+    );
+  }
+
+  /// Convert MusicalElement to JSON Map
+  static Map<String, dynamic> _elementToJson(MusicalElement element) {
+    if (element is Note) {
+      return {
+        'type': 'note',
+        'pitch': {
+          'step': element.pitch.step,
+          'octave': element.pitch.octave,
+          'alter': element.pitch.alter,
+        },
+        'duration': {
+          'type': element.duration.type.name,
+          'dots': element.duration.dots,
+        },
+      };
+    } else if (element is Rest) {
+      return {
+        'type': 'rest',
+        'duration': {
+          'type': element.duration.type.name,
+          'dots': element.duration.dots,
+        },
+      };
+    } else if (element is Clef) {
+      return {
+        'type': 'clef',
+        'clefType': element.actualClefType.name,
+      };
+    } else if (element is KeySignature) {
+      return {
+        'type': 'keySignature',
+        'count': element.fifths,
+      };
+    } else if (element is TimeSignature) {
+      return {
+        'type': 'timeSignature',
+        'numerator': element.numerator,
+        'denominator': element.denominator,
+      };
+    } else if (element is Barline) {
+      return {
+        'type': 'barline',
+        'barlineType': element.type.name,
+      };
+    }
+    // Add other element types as needed
+    return {'type': 'unknown'};
+  }
+
+  /// Retrieve a musical piece from the database
+  static Future<Staff?> loadPiece(int id) async {
+    final db = await database;
+    final results = await db.query(
+      'musical_pieces',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    
+    if (results.isEmpty) return null;
+    
+    final notationJson = results.first['notation_json'] as String;
+    
+    // Parse JSON to Staff using JsonMusicParser
+    return JsonMusicParser.parseStaff(notationJson);
+  }
+
+  /// Search pieces by composer
+  static Future<List<Map<String, dynamic>>> searchByComposer(
+    String composer,
+  ) async {
+    final db = await database;
+    return db.query(
+      'musical_pieces',
+      where: 'composer LIKE ?',
+      whereArgs: ['%$composer%'],
+      orderBy: 'title ASC',
+    );
+  }
+}
+```
+
+#### 2️⃣ Rendering from Database
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_notemus/flutter_notemus.dart';
+
+class MusicViewer extends StatelessWidget {
+  final int pieceId;
+
+  const MusicViewer({required this.pieceId});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Staff?>(
+      future: MusicDatabase.loadPiece(pieceId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        
+        if (snapshot.hasError || snapshot.data == null) {
+          return Center(child: Text('Failed to load music'));
+        }
+        
+        final staff = snapshot.data!;
+        
+        return SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: MusicScore(
+              staff: staff,
+              theme: MusicScoreTheme(
+                noteheadColor: Colors.black,
+                stemColor: Colors.black,
+                staffLineColor: Colors.black87,
+                barlineColor: Colors.black,
+              ),
+              staffSpace: 14.0,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+```
+
+#### 3️⃣ Complete App Example
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_notemus/flutter_notemus.dart';
+
+void main() {
+  runApp(MusicLibraryApp());
+}
+
+class MusicLibraryApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Music Library',
+      home: MusicListScreen(),
+    );
+  }
+}
+
+class MusicListScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('My Music Library')),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: MusicDatabase.searchByComposer(''),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
+          
+          final pieces = snapshot.data!;
+          
+          return ListView.builder(
+            itemCount: pieces.length,
+            itemBuilder: (context, index) {
+              final piece = pieces[index];
+              return ListTile(
+                title: Text(piece['title'] as String),
+                subtitle: Text(piece['composer'] as String),
+                trailing: Text(piece['time_signature'] as String? ?? ''),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MusicViewer(
+                        pieceId: piece['id'] as int,
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Add new piece
+          _showAddPieceDialog(context);
+        },
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _showAddPieceDialog(BuildContext context) {
+    // Implementation for adding new piece
+  }
+}
+```
+
+### ✅ Database Best Practices
+
+1. **Store JSON as TEXT** - SQLite handles JSON text efficiently
+2. **Index metadata fields** - For fast searching (composer, genre, difficulty)
+3. **Validate before saving** - Use `MeasureValidator` to ensure correctness
+4. **Version your JSON schema** - Add `schema_version` field for future migrations
+5. **Compress large pieces** - Use gzip for pieces with 50+ measures
+6. **Cache parsed Staff objects** - Parse JSON once, reuse Staff object
+
+### 💡 Pro Tips
+
+- **Backup strategy**: Export JSON to files for user backups
+- **Cloud sync**: Send JSON to Firebase/Supabase for multi-device sync
+- **Offline-first**: Store everything locally, sync when online
+- **Search optimization**: Use FTS (Full-Text Search) for title/composer searches
+- **Thumbnails**: Generate PNG previews of first system for list views
 
 ---
 

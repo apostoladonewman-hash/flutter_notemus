@@ -5,6 +5,8 @@ import 'note.dart';
 import 'rest.dart';
 import 'time_signature.dart';
 import 'duration.dart';
+import 'chord.dart';
+import 'tuplet.dart';
 
 /// Representa um compasso, que contém elementos musicais.
 class Measure {
@@ -83,26 +85,20 @@ class Measure {
         total += element.duration.realValue;
       } else if (element is Rest) {
         total += element.duration.realValue;
-      } else if (element.runtimeType.toString() == 'Chord') {
-        // Usar reflexão para evitar import circular
-        final dynamic chord = element;
-        if (chord.duration != null) {
-          total += chord.duration.realValue;
-        }
-      } else if (element.runtimeType.toString() == 'Tuplet') {
+      } else if (element is Chord) {
+        // Type-safe checking - sem reflexão
+        total += element.duration.realValue;
+      } else if (element is Tuplet) {
         // Calcular valor da quiáltera baseado na razão
-        final dynamic tuplet = element;
+        final tuplet = element;
         double tupletValue = 0.0;
 
         // Somar duração de todas as notas da quiáltera
         for (final tupletElement in tuplet.elements) {
           if (tupletElement is Note) {
             tupletValue += tupletElement.duration.realValue;
-          } else if (tupletElement.runtimeType.toString() == 'Chord') {
-            final dynamic chord = tupletElement;
-            if (chord.duration != null) {
-              tupletValue += chord.duration.realValue;
-            }
+          } else if (tupletElement is Chord) {
+            tupletValue += tupletElement.duration.realValue;
           }
         }
 
@@ -154,11 +150,10 @@ class Measure {
       return element.duration.realValue;
     } else if (element is Rest) {
       return element.duration.realValue;
-    } else if (element.runtimeType.toString() == 'Chord') {
-      final dynamic chord = element;
-      return chord.duration?.realValue ?? 0.0;
-    } else if (element.runtimeType.toString() == 'Tuplet') {
-      final dynamic tuplet = element;
+    } else if (element is Chord) {
+      return element.duration.realValue;
+    } else if (element is Tuplet) {
+      final tuplet = element;
       double tupletValue = 0.0;
       for (final tupletElement in tuplet.elements) {
         tupletValue += _getElementDuration(tupletElement);
